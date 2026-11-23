@@ -14,6 +14,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Three.js for Interactive 3D T-Shirt Studio -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <!-- Embedded 3D garment models (GLB, base64) used by the Create Your Fekra studio -->
     <script>
         window.FEKRA_GLB = {
@@ -121,22 +123,7 @@
                     </a>
                     <!-- Editorial Dropdown -->
                     <div class="absolute left-0 top-full w-60 bg-charcoal/95 backdrop-blur-xl border border-white/10 rounded-sm p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 shadow-2xl">
-                        <button onclick="selectCollectionFromNav('rasma')" class="w-full text-left px-3 py-2.5 rounded-sm hover:bg-white/5 transition-colors flex items-center justify-between">
-                            <span class="text-[11px] uppercase tracking-widest text-alabaster">Rasma</span>
-                            <span class="font-arabic text-sm text-champagne">رسمة</span>
-                        </button>
-                        <button onclick="selectCollectionFromNav('8any')" class="w-full text-left px-3 py-2.5 rounded-sm hover:bg-white/5 transition-colors flex items-center justify-between">
-                            <span class="text-[11px] uppercase tracking-widest text-alabaster">8any</span>
-                            <span class="font-arabic text-sm text-champagne">أغاني</span>
-                        </button>
-                        <button onclick="selectCollectionFromNav('e7sasy')" class="w-full text-left px-3 py-2.5 rounded-sm hover:bg-white/5 transition-colors flex items-center justify-between">
-                            <span class="text-[11px] uppercase tracking-widest text-alabaster">E7sasy</span>
-                            <span class="font-arabic text-sm text-champagne">إحساسي</span>
-                        </button>
-                        <button onclick="selectCollectionFromNav('7oby')" class="w-full text-left px-3 py-2.5 rounded-sm hover:bg-white/5 transition-colors flex items-center justify-between">
-                            <span class="text-[11px] uppercase tracking-widest text-alabaster">7oby</span>
-                            <span class="font-arabic text-sm text-champagne">حبي</span>
-                        </button>
+                        <div id="nav-chapters-desktop"></div>
                     </div>
                 </div>
                 <a href="#size-chart" class="hover:text-champagne transition-colors duration-300">Size Chart</a>
@@ -186,10 +173,7 @@
         </div>
         <nav class="flex flex-col space-y-5 font-serif text-2xl sm:text-3xl font-light text-alabaster">
             <a href="#origin" class="mobile-link hover:text-champagne hover:translate-x-2 transition-all">01. The Origin</a>
-            <a href="#collections" onclick="selectCollectionFromNav('rasma')" class="mobile-link hover:text-champagne hover:translate-x-2 transition-all">02. Rasma <span class="font-arabic text-xl text-champagne ml-2">رسمة</span></a>
-            <a href="#collections" onclick="selectCollectionFromNav('8any')" class="mobile-link hover:text-champagne hover:translate-x-2 transition-all">03. 8any <span class="font-arabic text-xl text-champagne ml-2">أغاني</span></a>
-            <a href="#collections" onclick="selectCollectionFromNav('e7sasy')" class="mobile-link hover:text-champagne hover:translate-x-2 transition-all">04. E7sasy <span class="font-arabic text-xl text-champagne ml-2">إحساسي</span></a>
-            <a href="#collections" onclick="selectCollectionFromNav('7oby')" class="mobile-link hover:text-champagne hover:translate-x-2 transition-all">05. 7oby <span class="font-arabic text-xl text-champagne ml-2">حبي</span></a>
+            <div id="nav-chapters-mobile" class="flex flex-col space-y-5"></div>
             <a href="#bespoke-studio" class="mobile-link text-champagne hover:translate-x-2 transition-all">06. Create Your Fekra</a>
             <a href="#size-chart" class="mobile-link hover:text-champagne hover:translate-x-2 transition-all">07. Size Chart</a>
             <a href="#about-policies" class="mobile-link hover:text-champagne hover:translate-x-2 transition-all">08. About, Returns &amp; Contact</a>
@@ -228,12 +212,12 @@
             </h1>
 
             <p class="max-w-2xl text-sm md:text-base font-light text-alabaster/75 leading-relaxed mb-10 animate-fade-up" style="animation-delay: 300ms;">
-                Born from a spontaneous spark between partners. Four collections built from real moments—and an open studio where your own feeling becomes something you can wear.
+                Born from a spontaneous spark between two gym partners. Collections built from real moments—and an open studio where your own feeling becomes something you can wear.
             </p>
 
             <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 animate-fade-up" style="animation-delay: 450ms;">
                 <a href="#collections" class="px-9 py-4 rounded-sm bg-champagne text-obsidian text-xs uppercase tracking-editorial font-medium hover:bg-alabaster transition-all duration-300">
-                    Explore The 4 Chapters
+                    Explore Chapters
                 </a>
                 <a href="#bespoke-studio" class="px-9 py-4 rounded-sm border border-alabaster/30 text-alabaster text-xs uppercase tracking-editorial hover:border-champagne hover:text-champagne transition-all duration-300">
                     Create Your Fekra
@@ -265,13 +249,13 @@
                 
                 <div class="space-y-5 text-stone font-light text-base leading-relaxed">
                     <p>
-                        Before the first drop, before the labels and the numbered releases, <strong class="text-alabaster font-normal">FEKRA (فكرة)</strong> was nothing more than a sudden conversation at the gym with my partner, <strong class="text-champagne font-normal">Abdelnasser</strong>.
+                        Before the first drop, before the labels and the numbered releases, <strong class="text-alabaster font-normal">FEKRA (فكرة)</strong> was nothing more than a sudden conversation at the gym between two partners.
                     </p>
                     <p>
-                        I had an archive of raw, personal designs I had created over time—sketches, moods, lyrics, and memories sitting untouched. Standing there talking with Abdelnasser, the realization hit us: <em>every great piece of art begins as a fleeting, unscripted idea in someone's head.</em>
+                        One of them had an archive of raw, personal designs made over time—sketches, moods, lyrics, and memories sitting untouched. Standing there between sets, the realization hit them both: <em>every great piece of art begins as a fleeting, unscripted idea in someone's head.</em>
                     </p>
                     <p>
-                        Instead of releasing random graphics, we curated those archive designs into <strong class="text-alabaster font-normal">four distinct chapters</strong>—each named after the exact human spark that brought it to life. Today, we put those raw moments on tees and hoodies you can actually wear.
+                        Instead of releasing random graphics, they curated that archive into <strong class="text-alabaster font-normal">distinct chapters</strong>—each named after the exact human spark that brought it to life. Today, those raw moments live on tees and hoodies you can actually wear.
                     </p>
                 </div>
 
@@ -283,7 +267,7 @@
                         <span class="text-xs text-stone mt-1 block">Relaxed, easy fit</span>
                     </div>
                     <div>
-                        <span class="font-serif text-2xl md:text-3xl text-champagne block">04</span>
+                        <span class="font-serif text-2xl md:text-3xl text-champagne block" id="chapter-count">04</span>
                         <span class="text-xs uppercase tracking-widest text-alabaster mt-1 block">Chapters</span>
                         <span class="text-xs text-stone mt-1 block">Born from real sparks</span>
                     </div>
@@ -312,7 +296,7 @@
                             “Every design in our archive started with a real moment—a bored sketch in class, a song at midnight, a date on a sleeve.”
                         </p>
                         <p class="text-[11px] uppercase tracking-editorial text-champagne mt-3">
-                            — Co-Founders &amp; Abdelnasser, FEKRA
+                            — The Founders, FEKRA
                         </p>
                     </div>
                 </div>
@@ -326,9 +310,9 @@
             <!-- Section Header -->
             <div class="flex flex-col lg:flex-row lg:items-end justify-between mb-12 gap-8 reveal">
                 <div>
-                    <span class="text-xs uppercase tracking-editorial text-champagne block mb-3">Archive Chapters I — IV</span>
+                    <span class="text-xs uppercase tracking-editorial text-champagne block mb-3">The Archive</span>
                     <h2 class="font-serif text-4xl sm:text-5xl md:text-6xl font-light text-alabaster">
-                        Four Sparks, Four Collections
+                        Every Spark, Its Own Chapter
                     </h2>
                 </div>
 
@@ -336,18 +320,6 @@
                 <div class="flex flex-wrap gap-2 sm:gap-3" id="category-filters">
                     <button data-filter="all" class="filter-btn active px-5 py-3 rounded-sm text-xs uppercase tracking-widest border border-champagne bg-champagne text-obsidian font-medium transition-all">
                         All Chapters
-                    </button>
-                    <button data-filter="rasma" class="filter-btn px-5 py-3 rounded-sm text-xs uppercase tracking-widest border border-white/15 text-alabaster/80 hover:border-champagne hover:text-champagne transition-all">
-                        Rasma <span class="font-arabic text-sm ml-1 opacity-80">رسمة</span>
-                    </button>
-                    <button data-filter="8any" class="filter-btn px-5 py-3 rounded-sm text-xs uppercase tracking-widest border border-white/15 text-alabaster/80 hover:border-champagne hover:text-champagne transition-all">
-                        8any <span class="font-arabic text-sm ml-1 opacity-80">أغاني</span>
-                    </button>
-                    <button data-filter="e7sasy" class="filter-btn px-5 py-3 rounded-sm text-xs uppercase tracking-widest border border-white/15 text-alabaster/80 hover:border-champagne hover:text-champagne transition-all">
-                        E7sasy <span class="font-arabic text-sm ml-1 opacity-80">إحساسي</span>
-                    </button>
-                    <button data-filter="7oby" class="filter-btn px-5 py-3 rounded-sm text-xs uppercase tracking-widest border border-white/15 text-alabaster/80 hover:border-champagne hover:text-champagne transition-all">
-                        7oby <span class="font-arabic text-sm ml-1 opacity-80">حبي</span>
                     </button>
                 </div>
             </div>
@@ -371,7 +343,7 @@
             <div class="max-w-3xl mb-16 reveal">
                 <div class="flex items-center space-x-4 mb-4">
                     <span class="h-[1px] w-12 bg-champagne"></span>
-                    <span class="text-xs uppercase tracking-editorial text-champagne">Chapter V &bull; Open Studio</span>
+                    <span class="text-xs uppercase tracking-editorial text-champagne">Open Studio</span>
                 </div>
                 <h2 class="font-serif text-4xl sm:text-5xl md:text-6xl font-light text-alabaster mb-5">
                     Your Fekra — <span class="italic text-champagne">Co-Creation Studio</span>
@@ -841,7 +813,7 @@
                         Made In Cairo. Built From Real Moments.
                     </h3>
                     <p class="text-sm text-stone font-light leading-relaxed mb-4">
-                        FEKRA (فكرة) is a local Egyptian brand that started with a gym conversation between <strong class="text-champagne font-normal">Abdelnasser</strong> and me. We turn sketches, songs, and feelings into pieces you can wear, made in small batches in Cairo.
+                        FEKRA (فكرة) is a local Egyptian brand that started with a gym conversation between two partners. We turn sketches, songs, and feelings into pieces you can wear, made in small batches in Cairo.
                     </p>
                     <p class="text-sm text-stone font-light leading-relaxed mb-8">
                         Have a question about sizing, tracking your order, or bringing a custom idea to life? Reach out directly to our team on WhatsApp or Instagram.
@@ -919,17 +891,13 @@
                         <span class="font-arabic text-2xl text-champagne">فكرة</span>
                     </a>
                     <p class="text-sm text-stone font-light max-w-md leading-relaxed">
-                        Born from a gym conversation with partner Abdelnasser—turning sketches, songs, emotions, and love stories into tees and hoodies you can wear.
+                        Born from a gym conversation between two partners—turning sketches, songs, emotions, and love stories into tees and hoodies you can wear.
                     </p>
                 </div>
 
                 <div>
                     <h4 class="text-xs uppercase tracking-editorial text-alabaster mb-5">The Chapters</h4>
-                    <ul class="space-y-3 text-sm text-stone font-light">
-                        <li><button onclick="selectCollectionFromNav('rasma')" class="hover:text-champagne transition-colors">Rasma (رسمة) — The Sketch</button></li>
-                        <li><button onclick="selectCollectionFromNav('8any')" class="hover:text-champagne transition-colors">8any (أغاني) — The Lyric</button></li>
-                        <li><button onclick="selectCollectionFromNav('e7sasy')" class="hover:text-champagne transition-colors">E7sasy (إحساسي) — My Feeling</button></li>
-                        <li><button onclick="selectCollectionFromNav('7oby')" class="hover:text-champagne transition-colors">7oby (حبي) — My Love</button></li>
+                    <ul id="footer-chapters" class="space-y-3 text-sm text-stone font-light">
                     </ul>
                 </div>
 
@@ -946,7 +914,7 @@
             </div>
 
             <div class="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-stone/70 gap-4">
-                <p>&copy; 2026 FEKRA (فكرة). Founded by Co-Founders &amp; Abdelnasser. All Rights Reserved.</p>
+                <p>&copy; 2026 FEKRA (فكرة). All Rights Reserved.</p>
                 <div class="flex space-x-8 uppercase tracking-widest">
                     <a href="#size-chart" class="hover:text-champagne transition-colors">Size Chart</a>
                     <a href="#about-policies" class="hover:text-champagne transition-colors">Returns</a>
@@ -1273,143 +1241,94 @@
         }
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyContactSettings); else applyContactSettings();
 
-        // 1. Collection Origin Stories Metadata
-        const collectionStories = {
+// 1+2. Catalog: chapters + products are loaded live from your database (edit them in admin.html)
+        // ====== PASTE YOUR FIREBASE SETTINGS HERE (same ones as in admin.html) ======
+        const FEKRA_FIREBASE = {
+            apiKey: "PASTE_API_KEY",
+            authDomain: "PASTE.firebaseapp.com",
+            projectId: "PASTE_PROJECT_ID",
+            appId: "PASTE_APP_ID"
+        };
+        const fekraDb = (FEKRA_FIREBASE.apiKey && !/PASTE/.test(FEKRA_FIREBASE.apiKey))
+            ? (firebase.initializeApp(FEKRA_FIREBASE), firebase.firestore()) : null;
+        let chapters = [];
+        let products = [];
+        let collectionStories = {
             all: {
-                tag: 'Complete Archive • Chapters I – IV',
-                title: 'Four Ideas, Curated From Life',
+                tag: 'Complete Archive • All Chapters',
+                title: 'Ideas, Curated From Life',
                 arabic: 'فِـكـرة',
                 story: 'Every piece in our archive began long before FEKRA existed—as a spontaneous doodle during an SAT prep lecture, a song that hit at the right second, a mood that needed words, or an anniversary stitched onto a sleeve.'
-            },
-            rasma: {
-                tag: 'Chapter I • RASMA (The Sketch)',
-                title: 'Born From A Bored Doodle In An SAT Prep Class',
-                arabic: 'رَسـمـة',
-                story: 'During a quiet SAT course, a friend was absentmindedly sketching in the margins of a notebook. Looking over at those raw, unscripted ink strokes, one thought sparked: what if this effortless moment became a graphic tee? Rasma keeps the original pen line exactly as it was drawn.'
-            },
-            '8any': {
-                tag: 'Chapter II • 8ANY (The Lyric)',
-                title: 'When A Song Becomes An Image In Your Mind',
-                arabic: 'أغـانـي',
-                story: '8any started the moment a song played and triggered an immediate, vivid emotion—translating sound waves into a mental picture, and finally onto a tee. Each piece captures the rhythm, nostalgia, and late-night feel of music you feel in your chest.'
-            },
-            e7sasy: {
-                tag: 'Chapter III • E7SASY (My Feeling)',
-                title: 'Wearing The Mood You Cannot Put Into Words',
-                arabic: 'إحـسـاسـي',
-                story: 'Created from a simple personal desire: wanting a T-shirt that expresses your exact internal mood or state of mind without saying a word. E7sasy turns vulnerability, calm, and inner intensity into minimalist typographic and abstract designs.'
-            },
-            '7oby': {
-                tag: 'Chapter IV • 7OBY (My Love)',
-                title: 'Matching Tees, A Date On The Sleeve, And A Birthday Surprise',
-                arabic: 'حُـبّـي',
-                story: 'It started with a simple wish: matching tees with our dates printed on the sleeves. Time went by and we forgot all about the idea—until her birthday, when I surprised her with them. 7oby is that surprise, made for two: a matching pair of tees, with a date that matters to you on both sleeves if you like.'
             }
         };
+        const isPairCat = (c) => { const ch = chapters.find(x => x.id === c); return !!ch && ch.type === 'pair'; };
+        const escH = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        function retext(from, to) {
+            if (!from || from === to) return;
+            const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); const ns = [];
+            while (w.nextNode()) ns.push(w.currentNode);
+            ns.forEach(n => { if (n.nodeValue && !n.parentElement.closest('script,style') && n.nodeValue.includes(from)) n.nodeValue = n.nodeValue.split(from).join(to); });
+        }
+        function buildChapterNav() {
+            const fw = document.getElementById('category-filters');
+            fw.querySelectorAll('[data-dyn]').forEach(e => e.remove());
+            chapters.forEach(ch => {
+                const b = document.createElement('button');
+                b.setAttribute('data-filter', ch.id); b.setAttribute('data-dyn', '1');
+                b.className = 'filter-btn px-5 py-3 rounded-sm text-xs uppercase tracking-widest border border-white/15 text-alabaster/80 hover:border-champagne hover:text-champagne transition-all';
+                b.innerHTML = `${escH(ch.name)} <span class="font-arabic text-sm ml-1 opacity-80">${escH(ch.arabic)}</span>`;
+                fw.appendChild(b);
+            });
+            filterBtns = document.querySelectorAll('.filter-btn');
+            document.getElementById('nav-chapters-desktop').innerHTML = chapters.map(ch => `
+                <button onclick="selectCollectionFromNav('${ch.id}')" class="w-full text-left px-3 py-2.5 rounded-sm hover:bg-white/5 transition-colors flex items-center justify-between">
+                    <span class="text-[11px] uppercase tracking-widest text-alabaster">${escH(ch.name)}</span>
+                    <span class="font-arabic text-sm text-champagne">${escH(ch.arabic)}</span>
+                </button>`).join('');
+            document.getElementById('nav-chapters-mobile').innerHTML = chapters.map(ch => `<a href="#collections" onclick="selectCollectionFromNav('${ch.id}')" class="mobile-link hover:text-champagne hover:translate-x-2 transition-all">00. ${escH(ch.name)} <span class="font-arabic text-xl text-champagne ml-2">${escH(ch.arabic)}</span></a>`).join('');
+            document.querySelectorAll('#mobile-menu nav a.mobile-link').forEach((a, i) => {
+                if (a.firstChild && a.firstChild.nodeType === 3) a.firstChild.nodeValue = a.firstChild.nodeValue.replace(/^(\s*)\d+\./, '$1' + String(i + 1).padStart(2, '0') + '.');
+            });
+            document.getElementById('footer-chapters').innerHTML = chapters.map(ch => `<li><button onclick="selectCollectionFromNav('${ch.id}')" class="hover:text-champagne transition-colors">${escH(ch.name)} (${escH(ch.arabic)})</button></li>`).join('');
+            document.getElementById('chapter-count').textContent = String(chapters.length).padStart(2, '0');
+        }
+        async function loadCatalog() {
+            const grid = document.getElementById('lookbook-grid');
+            if (!fekraDb) { grid.innerHTML = '<p class="text-stone text-sm col-span-full">The catalog is not connected yet.</p>'; return; }
+            grid.innerHTML = '<p class="text-stone text-sm col-span-full">Loading the archive…</p>';
+            try {
+                const [cs, ps, ss] = await Promise.all([
+                    fekraDb.collection('chapters').get(),
+                    fekraDb.collection('products').get(),
+                    fekraDb.collection('settings').doc('store').get()
+                ]);
+                const s = ss.exists ? ss.data() : {};
+                const oldWa = FEKRA_CONFIG.WHATSAPP_DISPLAY, oldIg = FEKRA_CONFIG.INSTAGRAM;
+                if (s.whatsapp) FEKRA_CONFIG.STORE_WHATSAPP = String(s.whatsapp).replace(/\D/g, '');
+                if (s.whatsappDisplay) FEKRA_CONFIG.WHATSAPP_DISPLAY = s.whatsappDisplay;
+                if (s.instagram) FEKRA_CONFIG.INSTAGRAM = String(s.instagram).replace('@', '');
+                if (s.shippingFee != null) FEKRA_CONFIG.SHIPPING_FEE = Number(s.shippingFee) || 0;
+                retext(oldWa, FEKRA_CONFIG.WHATSAPP_DISPLAY); retext(oldIg, FEKRA_CONFIG.INSTAGRAM); applyContactSettings();
 
-        // 2. T-Shirt Catalog Across the 4 Collections
-        const products = [
-            // RASMA
-            {
-                id: 'rasma-01',
-                title: 'The SAT Margin Sketch Tee',
-                arabicTitle: 'تيشيرت رسمة الهامش',
-                category: 'rasma',
-                categoryLabel: 'Rasma • رسمة',
-                price: 145,
-                edition: 'Boxy Fit',
-                fabric: 'Puff & Screen Ink',
-                image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=85',
-                description: 'Reproducing the exact unscripted ink lines sketched during an SAT prep lecture, in high-density matte puff ink.'
-            },
-            {
-                id: 'rasma-02',
-                title: 'Unscripted Ink Study No. 02',
-                arabicTitle: 'دراسة حبر رقم ٢',
-                category: 'rasma',
-                categoryLabel: 'Rasma • رسمة',
-                price: 155,
-                edition: 'Obsidian Wash',
-                fabric: 'Metallic Champagne Ink',
-                image: 'https://images.unsplash.com/photo-1503341504253-dff4815485f1?auto=format&fit=crop&w=900&q=85',
-                description: 'Continuous single-line contour artwork rendered in brushed champagne metallic ink across an obsidian tee.'
-            },
-            // 8ANY
-            {
-                id: '8any-01',
-                title: 'Midnight Verse Tee',
-                arabicTitle: 'تيشيرت مقطع منتصف الليل',
-                category: '8any',
-                categoryLabel: '8any • أغاني',
-                price: 160,
-                edition: 'Drop-Shoulder',
-                fabric: 'High-Density Screen Print',
-                image: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?auto=format&fit=crop&w=900&q=85',
-                description: 'Born from the exact second a melody turns into a visual memory. Features a crisp acoustic waveform chest print and lyric verse back print.'
-            },
-            {
-                id: '8any-02',
-                title: 'Echoes In Rhythm Graphic Tee',
-                arabicTitle: 'صدى الإيقاع',
-                category: '8any',
-                categoryLabel: '8any • أغاني',
-                price: 165,
-                edition: 'Vintage Charcoal',
-                fabric: 'Monochrome Screen Print',
-                image: 'https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?auto=format&fit=crop&w=900&q=85',
-                description: 'Inspired by late-night drives and timeless Arabic & soul records—translating auditory emotion into a monochrome screen print.'
-            },
-            // E7SASY
-            {
-                id: 'e7sasy-01',
-                title: 'Stillness & Mood Typographic Tee',
-                arabicTitle: 'تيشيرت إحساسي الصامت',
-                category: 'e7sasy',
-                categoryLabel: 'E7sasy • إحساسي',
-                price: 150,
-                edition: 'Signature Cut',
-                fabric: 'Raised Puff Print',
-                image: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=900&q=85',
-                description: 'Designed to wear your internal mood effortlessly. Minimalist raised 3D puff-printed Arabic calligraphy across the chest in obsidian-on-obsidian.'
-            },
-            {
-                id: 'e7sasy-02',
-                title: 'Solitude Aura Tee',
-                arabicTitle: 'هالة الشعور',
-                category: 'e7sasy',
-                categoryLabel: 'E7sasy • إحساسي',
-                price: 160,
-                edition: 'Alabaster Edition',
-                fabric: 'Matte Screen Print',
-                image: 'https://images.unsplash.com/photo-1562157873-818bc0726f68?auto=format&fit=crop&w=900&q=85',
-                description: 'A quiet statement piece capturing calm introspection through tonal matte screen printing on an alabaster tee.'
-            },
-            // 7OBY (Always a Pair of 2 Matching T-Shirts)
-            {
-                id: '7oby-01',
-                title: '7oby Anniversary Sleeve Duo (Pair of 2)',
-                arabicTitle: 'طقم حبي — تيشيرتان مع تاريخ الذكرى',
-                category: '7oby',
-                categoryLabel: '7oby • حبي (Pair of 2 Tees)',
-                price: 310,
-                edition: 'Pair of 2 Tees',
-                fabric: 'Matte Screen Print',
-                image: 'https://images.unsplash.com/photo-1554568218-0f1715e72254?auto=format&fit=crop&w=900&q=85',
-                description: 'Sold as a matching pair of 2 T-shirts. Select individual sizes for both tees and optionally add your shared date printed on both sleeves.'
-            },
-            {
-                id: '7oby-02',
-                title: '7oby Minimalist Crest Duo (Pair of 2)',
-                arabicTitle: 'طقم حبي الثنائي',
-                category: '7oby',
-                categoryLabel: '7oby • حبي (Pair of 2 Tees)',
-                price: 325,
-                edition: 'Matching Duo Set (2 Tees)',
-                fabric: 'Puff & Matte Print',
-                image: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=900&q=85',
-                description: 'Two matching tees made for you and your partner—choose each size individually and optionally add your special date on both cuffs.'
+                chapters = cs.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.order || 0) - (b.order || 0));
+                chapters.forEach(ch => { collectionStories[ch.id] = { tag: ch.tag || ch.name, title: ch.title || '', arabic: ch.bannerArabic || ch.arabic || '', story: ch.story || '' }; });
+                products = ps.docs.map(d => ({ id: d.id, ...d.data() }))
+                    .filter(p => p.visible !== false && chapters.some(c => c.id === p.category))
+                    .sort((a, b) => (chapters.findIndex(c => c.id === a.category) - chapters.findIndex(c => c.id === b.category)) || String(a.title).localeCompare(String(b.title)));
+                products.forEach(p => {
+                    const ch = chapters.find(c => c.id === p.category);
+                    p.categoryLabel = `${ch.name} • ${ch.arabic || ''}` + (ch.type === 'pair' ? ' (Pair of 2 Tees)' : '');
+                    p.price = Number(p.price) || 0;
+                });
+                buildChapterNav();
+                setActiveFilter('all');
+                updateCartUI();
+                if (!products.length) grid.innerHTML = '<p class="text-stone text-sm col-span-full">New pieces are coming soon.</p>';
+            } catch (err) {
+                console.error(err);
+                grid.innerHTML = '<p class="text-stone text-sm col-span-full">We could not load the archive. Please refresh the page.</p>';
             }
-        ];
+        }
 
         // 3. Application State
         let cart = [];
@@ -1423,7 +1342,7 @@
         // 4. DOM Elements
         const lookbookGrid = document.getElementById('lookbook-grid');
         const storyBanner = document.getElementById('collection-story-banner');
-        const filterBtns = document.querySelectorAll('.filter-btn');
+        let filterBtns = document.querySelectorAll('.filter-btn');
         const quickviewModal = document.getElementById('quickview-modal');
         const cartDrawer = document.getElementById('cart-drawer');
         const cartBackdrop = document.getElementById('cart-drawer-backdrop');
@@ -1466,7 +1385,7 @@
                 card.className = 'group cursor-pointer flex flex-col reveal active';
                 card.style.animationDelay = `${index * 70}ms`;
                 
-                const is7oby = product.category === '7oby';
+                const is7oby = isPairCat(product.category);
 
                 card.innerHTML = `
                     <div class="relative overflow-hidden rounded-sm bg-obsidian aspect-[3/4] mb-4 border border-white/10">
@@ -1536,10 +1455,9 @@
             renderLookbook(filter);
         }
 
-        filterBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                setActiveFilter(btn.getAttribute('data-filter'));
-            });
+        document.getElementById('category-filters').addEventListener('click', (e) => {
+            const b = e.target.closest('.filter-btn');
+            if (b) setActiveFilter(b.getAttribute('data-filter'));
         });
 
         function selectCollectionFromNav(filter) {
@@ -1611,7 +1529,7 @@
             const duoSizeBox = document.getElementById('modal-duo-size-box');
             const modalAddBtn = document.getElementById('modal-add-btn');
 
-            if (product.category === '7oby') {
+            if (isPairCat(product.category)) {
                 sleeveDateBox.classList.remove('hidden');
                 sleeveDateInput.value = '';
                 singleSizeBox.classList.add('hidden');
@@ -1737,14 +1655,14 @@
         });
 
         document.getElementById('modal-sleeve-date').addEventListener('input', () => {
-            if (activeProduct && activeProduct.category === '7oby') {
+            if (activeProduct && isPairCat(activeProduct.category)) {
                 update7obyDuoPreview();
             }
         });
 
         document.getElementById('modal-add-btn').addEventListener('click', () => {
             if (activeProduct) {
-                if (activeProduct.category === '7oby') {
+                if (isPairCat(activeProduct.category)) {
                     const sleeveDate = document.getElementById('modal-sleeve-date').value.trim();
                     const duoSizeLabel = `His: ${selectedColor1.name} (${selectedSize1}) | Hers: ${selectedColor2.name} (${selectedSize2})`;
                     addToCart(activeProduct, duoSizeLabel, sleeveDate);
@@ -1806,7 +1724,7 @@
                     <div class="h-full flex flex-col items-center justify-center text-center py-12">
                         <span class="font-arabic text-4xl text-champagne/60 mb-3">فكرة</span>
                         <p class="font-serif text-2xl text-alabaster mb-2">Your bag is empty</p>
-                        <p class="text-xs text-stone max-w-xs leading-relaxed">Explore Rasma, 8any, E7sasy, or 7oby—or co-create a 1-of-1 piece in Create Your Fekra.</p>
+                        <p class="text-xs text-stone max-w-xs leading-relaxed">Explore ${chapters.map(c => c.name).join(', ')}—or co-create a 1-of-1 piece in Create Your Fekra.</p>
                     </div>
                 `;
                 return;
@@ -1821,8 +1739,8 @@
                                 <h4 class="font-serif text-lg text-alabaster leading-snug">${item.title}</h4>
                                 <button onclick="updateItemQty(${idx}, -${item.qty})" class="text-xs text-stone hover:text-champagne">Remove</button>
                             </div>
-                            <p class="text-xs uppercase tracking-widest text-champagne mt-1">${(item.category === '7oby' || item.category === 'custom') ? item.size : `Size: ${item.size}`}</p>
-                            ${item.category === '7oby' ? `<p class="text-[11px] text-alabaster/80 mt-1">Sleeve Date Print: <span class="text-champagne">${item.sleeveDate || 'No date added'}</span></p>` : ''}
+                            <p class="text-xs uppercase tracking-widest text-champagne mt-1">${(isPairCat(item.category) || item.category === 'custom') ? item.size : `Size: ${item.size}`}</p>
+                            ${isPairCat(item.category) ? `<p class="text-[11px] text-alabaster/80 mt-1">Sleeve Date Print: <span class="text-champagne">${item.sleeveDate || 'No date added'}</span></p>` : ''}
                             ${item.category === 'custom' ? `<p class="text-[11px] text-alabaster/80 mt-1">The FEKRA team will confirm the design with you on WhatsApp.</p>` : ''}
                         </div>
                         <div class="flex items-center justify-between mt-3">
@@ -1898,6 +1816,18 @@
             return `https://wa.me/${FEKRA_CONFIG.STORE_WHATSAPP}?text=${encodeURIComponent(msg)}`;
         }
 
+async function saveOrderToDb(order) {
+            if (!fekraDb) return false;
+            try {
+                const { token, files, website, ...rest } = order;
+                const doc = JSON.parse(JSON.stringify({ ...rest, fileCount: (files || []).length, status: 'new' }));
+                if (JSON.stringify(doc).length > 900000) doc.items.forEach(i => { delete i.design; });
+                doc.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                await fekraDb.collection('orders').doc(order.orderId).set(doc);
+                return true;
+            } catch (e) { console.warn('Order DB save failed', e); return false; }
+        }
+
         // Returns 'confirmed' | 'unconfirmed' | 'failed' | 'not-configured'
         async function sendOrderToInbox(order) {
             const url = FEKRA_CONFIG.ORDERS_ENDPOINT;
@@ -1951,7 +1881,9 @@
                 website: ''
             };
 
-            const result = await sendOrderToInbox(order);
+            const dbOk = await saveOrderToDb(order);
+            let result = await sendOrderToInbox(order);
+            if (dbOk && (result === 'failed' || result === 'not-configured')) result = 'unconfirmed';
             const waLink = buildWhatsAppLink(order);
 
             document.getElementById('co-done-id').textContent = order.orderId;
@@ -3107,7 +3039,7 @@
         document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 
         // Initial Render
-        renderLookbook('all');
+        loadCatalog();
         renderSizeChart('boxy-tee');
         updateCartUI();
         window.addEventListener('DOMContentLoaded', init3DTShirtStudio);
