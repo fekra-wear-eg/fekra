@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>FEKRA Admin</title>
+<style>
+:root{--bg:#0e0e10;--card:#17171a;--line:#2a2a2f;--tx:#ece8df;--mu:#8d8a84;--gold:#C5A880;--red:#e0786e;--grn:#7fc08a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.5 system-ui,Segoe UI,Tahoma,sans-serif}
+[hidden]{display:none!important}h2,h3{font-weight:500;margin:0}a{color:var(--gold)}small,.mu{color:var(--mu)}
+input,select,textarea,button{font:inherit;color:inherit}
+input,select,textarea{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:9px 11px;margin-top:4px}
+input:focus,select:focus,textarea:focus{outline:0;border-color:var(--gold)}textarea{min-height:90px;resize:vertical}
+label{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mu);margin-top:12px}
+label.ck{display:flex;gap:8px;align-items:center;text-transform:none;letter-spacing:0;font-size:14px;color:var(--tx)}label.ck input{width:auto;margin:0}
+.btn{background:var(--gold);color:#141416;border:0;border-radius:4px;padding:9px 16px;cursor:pointer;font-weight:600}
+.btn.g{background:none;border:1px solid var(--line);color:var(--tx);font-weight:400}.btn.r{background:none;border:1px solid #5a2f2b;color:var(--red);font-weight:400}
+.btn.s{padding:5px 10px;font-size:12px}.btn:disabled{opacity:.5}
+#login{min-height:100vh;display:grid;place-items:center;padding:20px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:28px;width:100%;max-width:380px}
+.brand{font:500 24px Georgia,serif;color:var(--gold);letter-spacing:.2em}.err{color:var(--red);min-height:20px;margin:10px 0 0;word-break:break-all}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5}
+#tabs{display:flex;gap:4px;flex:1;flex-wrap:wrap}#tabs button{background:none;border:0;padding:8px 14px;cursor:pointer;color:var(--mu);border-radius:4px}#tabs button.on{background:var(--card);color:var(--gold)}
+main{max-width:1000px;margin:0 auto;padding:20px}.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}.bar h2{flex:1}.bar input,.bar select{width:auto;margin:0;min-width:160px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-bottom:12px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:8px}.row select{width:auto;margin:0;padding:5px 8px}.row .mu{flex:1}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}.grid .card{margin:0}
+.pr{display:flex;gap:12px}.pr img{width:70px;height:90px;object-fit:cover;border-radius:4px;background:var(--bg)}.act{display:flex;gap:8px;margin-top:8px}
+.tag{font-size:11px;padding:2px 8px;border-radius:10px;border:1px solid var(--line);text-transform:uppercase;letter-spacing:.06em}
+.tag.new{color:var(--gold);border-color:var(--gold)}.tag.delivered,.tag.confirmed{color:var(--grn)}.tag.cancelled{color:var(--red)}
+.perms{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+#m{position:fixed;inset:0;background:#000b;display:grid;place-items:start center;overflow:auto;padding:30px 14px;z-index:10}.mb{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:22px;width:100%;max-width:540px}
+#toast{position:fixed;bottom:20px;right:20px;background:var(--gold);color:#141416;padding:10px 16px;border-radius:4px;z-index:20}
+@media(max-width:640px){.g2,.perms{grid-template-columns:1fr}}
+</style></head><body>
+
+<div id="login"><form class="box" id="lf" autocomplete="on">
+<div class="brand">FEKRA</div><p class="mu" style="margin:4px 0 14px">Team dashboard</p>
+<label>Username<input id="u" autocomplete="username" required></label>
+<label>Password<input id="p" type="password" autocomplete="current-password" required></label>
+<p class="err" id="le"></p><button class="btn" style="width:100%;margin-top:8px">Log in</button>
+<p style="text-align:center;margin:16px 0 0"><a href="#" data-a="setup" class="mu">First time? Create the first owner</a></p></form></div>
+
+<div id="app" hidden>
+<header><span class="brand" style="font-size:18px">FEKRA</span><div id="tabs"></div><small id="who"></small>
+<button class="btn g s" data-a="pw">Password</button><button class="btn g s" data-a="out">Log out</button></header>
+<main id="main"></main></div>
+<div id="m" hidden><div class="mb" id="mb"></div></div><div id="toast" hidden></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// ===== PASTE YOUR FIREBASE SETTINGS HERE (same ones as in index.html) =====
+const CFG={apiKey:"AIzaSyDzk4FJjx9unOjFPoxiNrbYSyz-lKw6nRw",authDomain:"fekra-1026.firebaseapp.com",projectId:"fekra-1026",appId:"1:854905097799:web:4eba9cde50733c9b76ab62"};
+// ==========================================================================
+firebase.initializeApp(CFG);
+const auth=firebase.auth(),db=firebase.firestore(),FV=firebase.firestore.FieldValue,$=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uname=u=>u.trim().toLowerCase().replace(/\s+/g,'');
+const slug=s=>s.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+const wa=n=>{let d=String(n||'').replace(/\D/g,'');return d.startsWith('00')?d.slice(2):d.startsWith('0')?'20'+d.slice(1):d};
+const PERMS={products:'Edit products',chapters:'Edit chapters',orders_view:'See orders',orders_edit:'Update orders'};
+const STAT=['new','confirmed','printing','shipped','delivered','cancelled'];
+let me,tab,chs=[],prs=[],ors=[],stf=[],cfg={},unsub=[],of='all',oq='';
+const can=p=>me&&(me.role==='owner'||(me.perms||[]).includes(p));
+const toast=m=>{const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,2800)};
+const fail=e=>{console.error(e);toast(e.code==='permission-denied'?'You do not have permission for that.':'Error: '+e.message)};
+const modal=h=>{$('#mb').innerHTML=h;$('#m').hidden=false},closeM=()=>$('#m').hidden=true;
+$('#m').onclick=e=>{if(e.target.id==='m')closeM()};
+
+// ---------- login ----------
+$('#lf').onsubmit=async e=>{e.preventDefault();$('#le').textContent='';
+ try{const d=await db.collection('logins').doc(uname($('#u').value)).get();if(!d.exists)throw 0;await auth.signInWithEmailAndPassword(d.data().email,$('#p').value)}catch(x){$('#le').textContent='Wrong username or password.'}};
+auth.onAuthStateChanged(async u=>{unsub.forEach(f=>f());unsub=[];me=null;$('#app').hidden=true;$('#login').hidden=false;if(!u)return;
+ try{const s=await db.collection('users').doc(u.uid).get();
+  if(!s.exists||s.data().active===false){$('#le').innerHTML='No access yet. Ask an owner to enable your account.<br><small>ID: '+u.uid+'</small>';return}
+  me={id:u.uid,...s.data()};start()}catch(x){$('#le').textContent='Could not load your profile: '+x.message}});
+
+function start(){$('#login').hidden=true;$('#app').hidden=false;$('#who').textContent=me.username+' · '+me.role;
+ const sub=(q,fn)=>unsub.push(q.onSnapshot(fn,fail)),L=s=>s.docs.map(d=>({id:d.id,...d.data()}));
+ sub(db.collection('chapters'),s=>{chs=L(s).sort((a,b)=>(a.order||0)-(b.order||0));draw('chapters','products')});
+ if(can('products'))sub(db.collection('products'),s=>{prs=L(s).sort((a,b)=>(a.title||'').localeCompare(b.title||''));draw('products')});
+ if(can('orders_view')||can('orders_edit'))sub(db.collection('orders').orderBy('createdAt','desc').limit(300),s=>{ors=L(s);draw('orders')});
+ if(me.role==='owner')sub(db.collection('users'),s=>{stf=L(s);draw('staff')});
+ db.collection('settings').doc('store').get().then(d=>{cfg=d.data()||{};draw('settings')}).catch(()=>{});
+ const t=[];if(can('orders_view')||can('orders_edit'))t.push(['orders','Orders']);if(can('products'))t.push(['products','Products']);
+ if(can('chapters'))t.push(['chapters','Chapters']);if(me.role==='owner')t.push(['staff','Team'],['settings','Settings']);
+ $('#tabs').innerHTML=t.map(x=>`<button data-a="tab" data-id="${x[0]}">${x[1]}</button>`).join('');
+ t.length?go(t[0][0]):$('#main').innerHTML='<p class="mu">Your account has no permissions yet. Ask an owner.</p>'}
+const go=t=>{tab=t;document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.id===t));render()};
+const render=()=>{if(views[tab])$('#main').innerHTML=views[tab]()},draw=(...n)=>{if(n.includes(tab))render()};
+
+// ---------- images ----------
+const shrink=(f,max=900)=>new Promise((ok,no)=>{const i=new Image();i.onload=()=>{const r=Math.min(1,max/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*r;c.height=i.height*r;c.getContext('2d').drawImage(i,0,0,c.width,c.height);ok(c)};i.onerror=()=>no(Error('Not a valid image'));i.src=URL.createObjectURL(f)});
+async function upImg(f){const c=await shrink(f);
+ if(cfg.cloudName&&cfg.uploadPreset){const b=await new Promise(r=>c.toBlob(r,'image/jpeg',.85)),fd=new FormData();fd.append('file',b);fd.append('upload_preset',cfg.uploadPreset);
+  const j=await(await fetch(`https://api.cloudinary.com/v1_1/${cfg.cloudName}/image/upload`,{method:'POST',body:fd})).json();if(!j.secure_url)throw Error('Image upload failed');return j.secure_url}
+ let q=.85,d=c.toDataURL('image/jpeg',q);while(d.length>700000&&q>.3){q-=.1;d=c.toDataURL('image/jpeg',q)}return d}
+
+// ---------- views ----------
+const views={};
+views.orders=()=>{const l=ors.filter(o=>(of==='all'||o.status===of)&&(!oq||JSON.stringify([o.orderId,o.customer]).toLowerCase().includes(oq)));
+ return `<div class="bar"><h2>Orders <small>${l.length}</small></h2><input data-ch="oq" placeholder="Search name, phone, order ID" value="${esc(oq)}"><select data-ch="of"><option value="all">All statuses</option>${STAT.map(s=>`<option ${s===of?'selected':''}>${s}</option>`).join('')}</select></div>`+
+ (l.map(o=>{const c=o.customer||{},d=o.createdAt&&o.createdAt.toDate?o.createdAt.toDate().toLocaleString():'';
+ return `<div class="card"><div class="row"><b>${esc(o.orderId)}</b><span class="mu">${d}</span><span class="tag ${o.status}">${esc(o.status)}</span>${can('orders_edit')?`<select data-ch="st" data-id="${esc(o.orderId)}">${STAT.map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}</select>`:''}</div>
+ <div class="g2"><div><b>${esc(c.name)}</b><br><a target="_blank" href="https://wa.me/${wa(c.whatsapp)}?text=${encodeURIComponent('Hi '+(c.name||'')+', this is FEKRA about your order '+o.orderId)}">${esc(c.whatsapp)}</a><br>${esc(c.governorate)} — ${esc(c.address)}${c.notes?'<br><i>'+esc(c.notes)+'</i>':''}</div>
+ <div>${(o.items||[]).map(i=>`${i.qty}× ${esc(i.title)} — ${esc(i.size)}${i.sleeveDate?' · sleeve '+esc(i.sleeveDate):''}${i.design?` <span class="tag">custom ${esc(i.design.garment)}</span>`:''}`).join('<br>')}<br><b>EGP ${o.total}</b> · ${esc(o.paymentLabel||o.payment)}</div></div>
+ ${o.fileCount?'<p class="mu" style="margin:8px 0 0">Custom design files: see the Google Sheet / Drive backup.</p>':''}</div>`}).join('')||'<p class="mu">No orders.</p>')};
+views.products=()=>`<div class="bar"><h2>Products <small>${prs.length}</small></h2><button class="btn" data-a="pedit">+ Add product</button></div>`+
+ (prs.length?`<div class="grid">${prs.map(p=>`<div class="card pr"><img src="${esc(p.image)}" alt=""><div><b>${esc(p.title)}</b><div class="mu">${esc((chs.find(c=>c.id===p.category)||{}).name||'no chapter')} · EGP ${p.price}${p.visible===false?' · <span style="color:var(--red)">hidden</span>':''}</div><div class="act"><button class="btn g s" data-a="pedit" data-id="${p.id}">Edit</button><button class="btn r s" data-a="pdel" data-id="${p.id}">Delete</button></div></div></div>`).join('')}</div>`:'<p class="mu">No products yet.</p>');
+views.chapters=()=>`<div class="bar"><h2>Chapters <small>${chs.length}</small></h2><button class="btn" data-a="cedit">+ Add chapter</button></div>`+
+ chs.map(c=>`<div class="card"><div class="row"><b>${esc(c.name)}</b><span>${esc(c.arabic)}</span><span class="tag">${c.type==='pair'?'pair of 2':'single tee'}</span><span class="mu">order ${c.order||0}</span><button class="btn g s" data-a="cedit" data-id="${c.id}">Edit</button><button class="btn r s" data-a="cdel" data-id="${c.id}">Delete</button></div><div class="mu">${esc(c.title)}</div></div>`).join('');
+views.staff=()=>`<div class="bar"><h2>Team</h2><button class="btn" data-a="snew">+ Add team member</button></div>`+
+ stf.map(u=>`<div class="card"><div class="row"><b>${esc(u.username)}</b><span class="tag">${esc(u.role)}</span>${u.active===false?'<span class="tag cancelled">disabled</span>':''}${u.id===me.id?'<span class="mu">(you)</span>':''}</div>`+
+ (u.role==='owner'?'<p class="mu" style="margin:0">Full access</p>':`<div class="perms">${Object.entries(PERMS).map(([k,v])=>`<label class="ck"><input type="checkbox" data-ch="perm" data-id="${u.id}" data-k="${k}" ${(u.perms||[]).includes(k)?'checked':''}> ${v}</label>`).join('')}</div>`)+
+ `<div class="act"><button class="btn g s" data-a="elogin" data-id="${u.id}">Edit username / password</button>${u.role==='owner'?'':`<button class="btn g s" data-a="stoggle" data-id="${u.id}">${u.active===false?'Enable':'Disable'}</button><button class="btn r s" data-a="sdel" data-id="${u.id}">Remove</button>`}</div></div>`).join('');
+views.settings=()=>`<div class="bar"><h2>Store settings</h2></div><form class="card" id="sf"><div class="g2"><label>WhatsApp number (country code, digits only)<input name="whatsapp" value="${esc(cfg.whatsapp)}" placeholder="201094390395"></label><label>WhatsApp shown on site<input name="whatsappDisplay" value="${esc(cfg.whatsappDisplay)}" placeholder="+20 109 439 0395"></label>
+ <label>Instagram handle<input name="instagram" value="${esc(cfg.instagram)}" placeholder="fekra.wear"></label><label>Shipping fee (EGP)<input name="shippingFee" type="number" min="0" value="${esc(cfg.shippingFee)}"></label>
+ <label>Cloudinary cloud name (optional)<input name="cloudName" value="${esc(cfg.cloudName)}"></label><label>Cloudinary upload preset (optional)<input name="uploadPreset" value="${esc(cfg.uploadPreset)}"></label></div>
+ <p class="mu">Without Cloudinary, product photos are compressed and stored inside the database. That works fine for a small catalog.</p><button class="btn">Save settings</button></form>`;
+
+// ---------- forms ----------
+function pform(p){if(!chs.length)return alert('Create a chapter first.');
+ modal(`<h3>${p.id?'Edit':'New'} product</h3><form id="pf"><label>Title<input name="title" required value="${esc(p.title)}"></label><label>Arabic title<input name="arabicTitle" dir="rtl" value="${esc(p.arabicTitle)}"></label>
+ <div class="g2"><label>Chapter<select name="category">${chs.map(c=>`<option value="${c.id}" ${c.id===p.category?'selected':''}>${esc(c.name)}</option>`).join('')}</select></label><label>Price (EGP)<input name="price" type="number" min="0" required value="${p.price??''}"></label>
+ <label>Edition<input name="edition" value="${esc(p.edition)}" placeholder="Boxy Fit"></label><label>Fabric / print<input name="fabric" value="${esc(p.fabric)}" placeholder="Screen Print"></label></div>
+ <label>Description<textarea name="description">${esc(p.description)}</textarea></label><label>Photo<input name="file" type="file" accept="image/*"></label>
+ <label>…or image link<input name="image" value="${p.image&&!p.image.startsWith('data:')?esc(p.image):''}" placeholder="https://"></label>${p.image?`<img src="${esc(p.image)}" style="height:70px;margin-top:8px;border-radius:4px">`:''}
+ <label class="ck"><input type="checkbox" name="visible" ${p.visible===false?'':'checked'}> Visible in the store</label><div class="act" style="margin-top:16px"><button class="btn">Save</button><button type="button" class="btn g" data-a="close">Cancel</button></div></form>`);
+ $('#pf').onsubmit=async e=>{e.preventDefault();const E=e.target.elements,b=E[E.length-2];b.disabled=true;
+  try{let img=E.image.value.trim()||p.image||'';if(E.file.files[0])img=await upImg(E.file.files[0]);
+   await(p.id?db.collection('products').doc(p.id):db.collection('products').doc()).set({title:E.title.value.trim(),arabicTitle:E.arabicTitle.value.trim(),category:E.category.value,price:+E.price.value,edition:E.edition.value.trim(),fabric:E.fabric.value.trim(),description:E.description.value.trim(),image:img,visible:E.visible.checked,updatedAt:FV.serverTimestamp(),updatedBy:me.username},{merge:true});
+   closeM();toast('Product saved')}catch(x){fail(x);b.disabled=false}}}
+function cform(c){modal(`<h3>${c.id?'Edit':'New'} chapter</h3><form id="cf"><div class="g2"><label>Name (English)<input name="name" required value="${esc(c.name)}"></label><label>Arabic name<input name="arabic" dir="rtl" value="${esc(c.arabic)}"></label>
+ <label>Banner Arabic (styled)<input name="bannerArabic" dir="rtl" value="${esc(c.bannerArabic)}"></label><label>Order<input name="order" type="number" value="${c.order??chs.length+1}"></label></div>
+ <label>Type<select name="type"><option value="single">Single tee (normal)</option><option value="pair" ${c.type==='pair'?'selected':''}>Pair of 2 tees (7oby style)</option></select></label>
+ <label>Small tag line<input name="tag" value="${esc(c.tag)}" placeholder="Chapter I • RASMA (The Sketch)"></label><label>Story title<input name="title" value="${esc(c.title)}"></label><label>Story<textarea name="story">${esc(c.story)}</textarea></label>
+ <div class="act" style="margin-top:16px"><button class="btn">Save</button><button type="button" class="btn g" data-a="close">Cancel</button></div></form>`);
+ $('#cf').onsubmit=async e=>{e.preventDefault();const E=e.target.elements;try{const id=c.id||slug(E.name.value);if(!id)throw Error('Please enter a name using letters or numbers');if(!c.id&&chs.some(x=>x.id===id))throw Error('A chapter with this name already exists');
+  await db.collection('chapters').doc(id).set({name:E.name.value.trim(),arabic:E.arabic.value.trim(),bannerArabic:E.bannerArabic.value.trim(),order:+E.order.value||0,type:E.type.value,tag:E.tag.value.trim(),title:E.title.value.trim(),story:E.story.value.trim()},{merge:true});closeM();toast('Chapter saved')}catch(x){fail(x)}}}
+const UN='pattern="[A-Za-z0-9._-]{3,}" title="Letters, numbers . _ - (3+ characters)"';
+const taken=async n=>(await db.collection('logins').doc(n).get()).exists;
+async function mkAcct(name,pw){const app2=firebase.initializeApp(CFG,'s'+Date.now());
+ try{const email=name+'.'+Math.random().toString(36).slice(2,8)+'@fekra.team',cr=await app2.auth().createUserWithEmailAndPassword(email,pw);return{uid:cr.user.uid,email}}
+ finally{await app2.auth().signOut().catch(()=>{});app2.delete()}}
+function setupForm(){modal(`<h3>Create the first owner</h3><form id="su"><p class="mu">Works only once, before any owner exists. You need the setup code you wrote inside firestore.rules.</p>
+ <label>Setup code<input name="c" required autocomplete="off"></label><label>Owner username<input name="u" required ${UN}></label><label>Password (min 6 characters)<input name="p" type="text" minlength="6" required autocomplete="off"></label>
+ <div class="act" style="margin-top:16px"><button class="btn">Create owner</button><button type="button" class="btn g" data-a="close">Cancel</button></div></form>`);
+ $('#su').onsubmit=async e=>{e.preventDefault();const E=e.target.elements,name=uname(E.u.value);let cr;
+  try{const email=name+'.'+Math.random().toString(36).slice(2,8)+'@fekra.team';cr=await auth.createUserWithEmailAndPassword(email,E.p.value);
+   const b=db.batch();b.set(db.collection('meta').doc('setup'),{code:E.c.value.trim(),at:FV.serverTimestamp()});
+   b.set(db.collection('users').doc(cr.user.uid),{username:name,role:'owner',perms:[],active:true});b.set(db.collection('logins').doc(name),{email,uid:cr.user.uid});
+   await b.commit();location.reload()}
+  catch(x){if(cr)await cr.user.delete().catch(()=>{});alert(x.code==='permission-denied'?'Wrong setup code, or the first owner already exists.':x.message)}}}
+function sform(){modal(`<h3>New team member</h3><form id="nf"><label>Username (letters/numbers, no spaces)<input name="u" required ${UN} autocomplete="off"></label><label>Password (min 6 characters)<input name="p" type="text" minlength="6" required autocomplete="off"></label>
+ <label>Role<select name="role"><option value="staff">Staff (only what you tick)</option><option value="owner">Owner (everything)</option></select></label>
+ <label>Staff can do</label><div class="perms">${Object.entries(PERMS).map(([k,v])=>`<label class="ck"><input type="checkbox" name="${k}"> ${v}</label>`).join('')}</div>
+ <div class="act" style="margin-top:16px"><button class="btn">Create</button><button type="button" class="btn g" data-a="close">Cancel</button></div></form>`);
+ $('#nf').onsubmit=async e=>{e.preventDefault();const E=e.target.elements,name=uname(E.u.value),role=E.role.value;
+  try{if(await taken(name))throw Error('That username is already taken');const a=await mkAcct(name,E.p.value),b=db.batch();
+   b.set(db.collection('users').doc(a.uid),{username:name,role,perms:role==='owner'?[]:Object.keys(PERMS).filter(k=>E[k].checked),active:true,createdBy:me.username});
+   b.set(db.collection('logins').doc(name),{email:a.email,uid:a.uid});await b.commit();closeM();toast('Account created')}catch(x){fail(x)}}}
+function eform(id){const u=stf.find(x=>x.id===id);if(!u)return;
+ modal(`<h3>Edit login — ${esc(u.username)}</h3><form id="ef"><label>Username<input name="u" required ${UN} value="${esc(u.username)}" autocomplete="off"></label><label>New password (min 6 characters)<input name="p" type="text" minlength="6" required autocomplete="off"></label>
+ <p class="mu">Always set a new password when you change a login. The old password stops working straight away.${id===me.id?' This is your own account, so you will be logged out and must log in again.':''}</p>
+ <div class="act"><button class="btn">Save</button><button type="button" class="btn g" data-a="close">Cancel</button></div></form>`);
+ $('#ef').onsubmit=async e=>{e.preventDefault();const E=e.target.elements,name=uname(E.u.value),{id:_,...prof}=u;
+  try{if(name!==u.username&&await taken(name))throw Error('That username is already taken');const a=await mkAcct(name,E.p.value),b=db.batch();
+   b.set(db.collection('users').doc(a.uid),{...prof,username:name,updatedBy:me.username});b.delete(db.collection('users').doc(id));
+   if(name!==u.username)b.delete(db.collection('logins').doc(u.username));b.set(db.collection('logins').doc(name),{email:a.email,uid:a.uid});
+   await b.commit();closeM();if(id===me.id){auth.signOut();alert('Login changed. Please log in again.')}else toast('Login updated')}catch(x){fail(x)}}}
+
+// ---------- clicks ----------
+const acts={tab:(id)=>go(id),close:closeM,out:()=>auth.signOut(),
+ pw:()=>{const p=prompt('New password (min 6 characters)');if(p)auth.currentUser.updatePassword(p).then(()=>toast('Password changed')).catch(e=>alert(e.code==='auth/requires-recent-login'?'For safety, log out, log in again, then retry.':e.message))},
+ pedit:id=>pform(prs.find(p=>p.id===id)||{}),cedit:id=>cform(chs.find(c=>c.id===id)||{}),snew:sform,elogin:eform,setup:setupForm,
+ pdel:id=>confirm('Delete this product for good?')&&db.collection('products').doc(id).delete().then(()=>toast('Deleted')).catch(fail),
+ cdel:async id=>{try{if(!(await db.collection('products').where('category','==',id).limit(1).get()).empty)return alert('This chapter still has products. Move or delete them first.');
+  if(confirm('Delete this chapter?'))await db.collection('chapters').doc(id).delete()}catch(x){fail(x)}},
+ stoggle:id=>db.collection('users').doc(id).update({active:stf.find(u=>u.id===id).active===false}).catch(fail),
+ sdel:id=>{const u=stf.find(x=>x.id===id);confirm('Remove this person? They will lose all access.')&&db.batch().delete(db.collection('users').doc(id)).delete(db.collection('logins').doc(u.username)).commit().catch(fail)}};
+document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(t&&acts[t.dataset.a]){e.preventDefault();acts[t.dataset.a](t.dataset.id)}});
+document.addEventListener('change',e=>{const t=e.target,k=t.dataset.ch;if(!k)return;
+ if(k==='of'){of=t.value;render()}else if(k==='oq'){oq=t.value.trim().toLowerCase();render()}
+ else if(k==='st')db.collection('orders').doc(t.dataset.id).update({status:t.value,statusBy:me.username,statusAt:FV.serverTimestamp()}).then(()=>toast('Status updated')).catch(fail);
+ else if(k==='perm')db.collection('users').doc(t.dataset.id).update({perms:t.checked?FV.arrayUnion(t.dataset.k):FV.arrayRemove(t.dataset.k)}).catch(fail)});
+document.addEventListener('submit',async e=>{if(e.target.id!=='sf')return;e.preventDefault();const E=e.target.elements;
+ const d={whatsapp:E.whatsapp.value.replace(/\D/g,''),whatsappDisplay:E.whatsappDisplay.value.trim(),instagram:E.instagram.value.replace('@','').trim(),shippingFee:+E.shippingFee.value||0,cloudName:E.cloudName.value.trim(),uploadPreset:E.uploadPreset.value.trim()};
+ try{await db.collection('settings').doc('store').set(d,{merge:true});cfg={...cfg,...d};toast('Settings saved')}catch(x){fail(x)}});
+</script></body></html>
