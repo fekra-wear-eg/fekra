@@ -360,11 +360,8 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
                         <span id="preview-color-label" class="text-champagne">Black</span>
                     </div>
 
-                    <!-- Garment Switcher: Boxy Tee vs Boxy Hoodie -->
-                    <div class="flex rounded-sm border border-white/15 overflow-hidden mb-3" role="group" aria-label="Choose garment">
-                        <button type="button" id="garment-tee-btn" aria-pressed="true" class="flex-1 px-3 py-2.5 bg-champagne text-obsidian text-[11px] uppercase tracking-widest font-medium transition-colors">Boxy Tee</button>
-                        <button type="button" id="garment-hoodie-btn" aria-pressed="false" class="flex-1 px-3 py-2.5 bg-charcoal text-alabaster text-[11px] uppercase tracking-widest hover:text-champagne transition-colors">Boxy Hoodie</button>
-                    </div>
+                    <!-- Garment Switcher: buttons are built from the garments you set up in the admin -->
+                    <div id="garment-switcher" class="flex flex-wrap rounded-sm border border-white/15 overflow-hidden mb-3" role="group" aria-label="Choose garment"></div>
 
                     <!-- Mode Switcher: Orbit 3D Shirt vs Move Print -->
                     <div class="grid grid-cols-2 gap-2 mb-3">
@@ -766,25 +763,12 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
             </div>
 
             <!-- Interactive Cut & Garment Selector Tabs -->
-            <div class="flex flex-wrap gap-2.5 mb-8" id="size-chart-tabs">
-                <button data-ek="size-chart-tabs-1" type="button" data-chart="boxy-tee" class="chart-tab-btn active px-5 py-2.5 rounded-sm border border-champagne bg-champagne text-obsidian text-xs uppercase tracking-widest font-medium transition-all">
-                    Boxy Cut T-Shirts
-                </button>
-                <button data-ek="size-chart-tabs-2" type="button" data-chart="boxy-hoodie" class="chart-tab-btn px-5 py-2.5 rounded-sm border border-white/15 text-alabaster/80 hover:border-champagne hover:text-champagne text-xs uppercase tracking-widest transition-all">
-                    Boxy Fit Hoodies
-                </button>
-            </div>
+            <div class="flex flex-wrap gap-2.5 mb-8" id="size-chart-tabs"></div>
 
             <div class="overflow-x-auto rounded-sm border border-white/10 bg-obsidian">
                 <table class="w-full text-left border-collapse min-w-[600px]">
                     <thead>
-                        <tr class="border-b border-white/10 bg-charcoal/80 text-[11px] uppercase tracking-editorial text-champagne">
-                            <th data-ek="size-chart-3" class="py-4 px-6 font-medium">Size</th>
-                            <th data-ek="size-chart-4" class="py-4 px-6 font-medium">Chest Width (cm)</th>
-                            <th data-ek="size-chart-5" class="py-4 px-6 font-medium">Body Length (cm)</th>
-                            <th data-ek="size-chart-6" class="py-4 px-6 font-medium">Shoulder Width (cm)</th>
-                            <th data-ek="size-chart-7" class="py-4 px-6 font-medium">Sleeve Length (cm)</th>
-                        </tr>
+                        <tr id="size-chart-thead-row" class="border-b border-white/10 bg-charcoal/80 text-[11px] uppercase tracking-editorial text-champagne"></tr>
                     </thead>
                     <tbody id="size-chart-tbody" class="divide-y divide-white/10 text-sm text-alabaster/90 font-light">
                         <!-- Populated dynamically via JS -->
@@ -1256,6 +1240,50 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
             { id: 'base-black', name: 'Black', hex: '#141416', ink: '#C5A880', studioTee: true, studioHoodie: true },
             { id: 'base-white', name: 'White', hex: '#F6F5F2', ink: '#141417', studioTee: true, studioHoodie: true }
         ];
+        // ===== Garments (3D model + price + size chart). Edited in admin.html > "Garments & sizes".
+        // These two are the built-in defaults; once you save garments in the admin, the database wins.
+        const SC_COLS = [{ en: 'Size', ar: 'المقاس' }, { en: 'Chest Width (cm)', ar: 'عرض الصدر (سم)' }, { en: 'Body Length (cm)', ar: 'طول الجسم (سم)' }, { en: 'Shoulder Width (cm)', ar: 'عرض الكتف (سم)' }, { en: 'Sleeve Length (cm)', ar: 'طول الكم (سم)' }];
+        const DEFAULT_GARMENTS = [
+            { id: 'tee', order: 1, name: 'Boxy Tee', nameAr: 'تيشيرت بوكسي', short: 'Tee', price: 160, builtin: 'tee',
+              chartTab: 'Boxy Cut T-Shirts', chartTabAr: 'تيشيرتات بقصّة بوكسي',
+              subtitle: 'Cut in a dropped-shoulder boxy silhouette. Take your true size for a relaxed drape.', subtitleAr: '',
+              chart: { cols: SC_COLS, rows: [['XS', '55 cm', '65 cm', '52 cm', '21 cm'], ['S', '58 cm', '67 cm', '54 cm', '22 cm'], ['M', '61 cm', '69 cm', '57 cm', '23 cm'], ['L', '64 cm', '71 cm', '60 cm', '24 cm'], ['XL', '67 cm', '73 cm', '62 cm', '25 cm'], ['XXL', '70 cm', '75 cm', '64 cm', '26 cm']] } },
+            { id: 'hoodie', order: 2, name: 'Boxy Hoodie', nameAr: 'هودي بوكسي', short: 'Hoodie', price: 300, builtin: 'hoodie',
+              chartTab: 'Boxy Fit Hoodies', chartTabAr: 'هوديز بقصّة بوكسي',
+              subtitle: 'Boxy hoodie cut with wide dropped shoulders, a double-lined hood, and a rib hem.', subtitleAr: '',
+              chart: { cols: SC_COLS, rows: [['XS', '60 cm', '63 cm', '58 cm', '57 cm'], ['S', '63 cm', '65 cm', '60 cm', '58 cm'], ['M', '66 cm', '67 cm', '63 cm', '60 cm'], ['L', '69 cm', '69 cm', '66 cm', '62 cm'], ['XL', '72 cm', '71 cm', '68 cm', '63 cm'], ['XXL', '75 cm', '73 cm', '70 cm', '64 cm']] } }
+        ];
+        let garments = DEFAULT_GARMENTS.slice();
+        let activeChart = null;
+        const garmentById = (id) => garments.find(g => g.id === id) || garments[0] || DEFAULT_GARMENTS[0];
+        const gName = (g) => (siteLang === 'ar' && g.nameAr) ? g.nameAr : g.name;
+        // A studio colour is offered on a garment if it was ticked for it (older colours only know tee / hoodie)
+        const colorOkFor = (c, gid) => Array.isArray(c.studioGarments) ? c.studioGarments.includes(gid) : (gid === 'hoodie' ? !!c.studioHoodie : gid === 'tee' ? !!c.studioTee : false);
+        const SW_ON = 'flex-1 min-w-[30%] px-3 py-2.5 bg-champagne text-obsidian text-[11px] uppercase tracking-widest font-medium transition-colors';
+        const SW_OFF = 'flex-1 min-w-[30%] px-3 py-2.5 bg-charcoal text-alabaster text-[11px] uppercase tracking-widest hover:text-champagne transition-colors';
+        function buildGarmentSwitcher() {
+            const box = document.getElementById('garment-switcher');
+            if (!box || !garments.length) return;
+            if (!garments.some(g => g.id === studioState.garment)) studioState.garment = garments[0].id;
+            box.innerHTML = garments.map(g => { const on = g.id === studioState.garment; return `<button type="button" data-g="${escH(g.id)}" aria-pressed="${on}" class="${on ? SW_ON : SW_OFF}">${escH(gName(g))}</button>`; }).join('');
+            box.style.display = garments.length > 1 ? '' : 'none';
+            const cur = garmentById(studioState.garment);
+            const nm = document.getElementById('inspect-garment-name');
+            if (nm) nm.textContent = (siteLang === 'ar' ? (cur.nameAr || cur.short) : cur.short) || cur.name;
+        }
+        function selectGarment(id) {
+            if (!garments.some(g => g.id === id)) return;
+            if (window.fekraSetGarment) window.fekraSetGarment(id); else { studioState.garment = id; buildGarmentSwitcher(); }
+            setTimeout(() => { if (typeof buildStudioColors === 'function') buildStudioColors(); }, 0);
+        }
+        document.addEventListener('click', (e) => { const b = e.target.closest && e.target.closest('#garment-switcher [data-g]'); if (b) selectGarment(b.dataset.g); });
+        function refreshGarments() {
+            buildGarmentSwitcher();
+            renderSizeChartTabs();
+            renderSizeChart();
+            if (window.fekraSyncGarments) window.fekraSyncGarments();
+        }
+
         const inkFor = (hex) => { const h = String(hex || '#000').replace('#', ''); const n = parseInt(h.length === 3 ? h.split('').map(x => x + x).join('') : h, 16) || 0; const l = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255; return l > 0.6 ? '#141417' : '#C5A880'; };
         let collectionStories = {
             all: {
@@ -1356,6 +1384,7 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
                 b.className = 'px-2.5 py-1.5 ' + (b.dataset.lang === siteLang ? 'bg-champagne text-obsidian font-medium' : 'text-alabaster/70 hover:text-champagne');
             });
             renumberMobileNav();
+            if (typeof buildGarmentSwitcher === 'function') { buildGarmentSwitcher(); renderSizeChartTabs(); renderSizeChart(); }
             if (typeof applyContactSettings === 'function') applyContactSettings();
             try { localStorage.setItem('fekra-lang', siteLang); } catch (e) {}
         }
@@ -1400,12 +1429,13 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
             if (!fekraDb) { grid.innerHTML = '<p class="text-stone text-sm col-span-full">The catalog is not connected yet.</p>'; return; }
             grid.innerHTML = '<p class="text-stone text-sm col-span-full">Loading the archive…</p>';
             try {
-                const [cs, ps, ss, cls, cds] = await Promise.all([
+                const [cs, ps, ss, cls, cds, gds] = await Promise.all([
                     fekraDb.collection('chapters').get(),
                     fekraDb.collection('products').get(),
                     fekraDb.collection('settings').doc('store').get(),
                     fekraDb.collection('colors').get().catch(() => ({ docs: [] })),
-                    fekraDb.collection('content').doc('site').get().catch(() => null)
+                    fekraDb.collection('content').doc('site').get().catch(() => null),
+                    fekraDb.collection('garments').get().catch(() => ({ docs: [] }))
                 ]);
                 const s = ss.exists ? ss.data() : {};
                 const oldWa = FEKRA_CONFIG.WHATSAPP_DISPLAY, oldIg = FEKRA_CONFIG.INSTAGRAM;
@@ -1427,6 +1457,9 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
                 });
                 palette = cls.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.order || 0) - (b.order || 0));
                 textOverrides = (cds && cds.exists && cds.data().texts) || {};
+                const gl = gds.docs.map(d => ({ id: d.id, ...d.data() })).filter(g => g.visible !== false).sort((a, b) => (a.order || 0) - (b.order || 0));
+                if (gds.docs.length) garments = gl;   // nothing saved yet -> keep the built-in Tee + Hoodie
+                refreshGarments();
                 applyLang(siteLang);
                 buildChapterNav();
                 buildStudioColors();
@@ -2393,31 +2426,65 @@ async function saveOrderToDb(order) {
                 const backPrintMat = makePrintMaterial(backTexture);
 
                 // --- Minimal GLB reader (positions + indices only, which is what the Boxy models contain) ---
-                function parseBoxyGLB(b64) {
+                function b64ToBytes(b64) {
                     const bin = atob(b64);
                     const bytes = new Uint8Array(bin.length);
                     for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-                    const dv = new DataView(bytes.buffer);
-                    const jsonLen = dv.getUint32(12, true);
-                    const json = JSON.parse(new TextDecoder().decode(bytes.subarray(20, 20 + jsonLen)));
-                    const binStart = 20 + jsonLen + 8;
-                    const prim = json.meshes[0].primitives[0];
-
-                    const readAccessor = (ai, Type) => {
-                        const acc = json.accessors[ai];
+                    return bytes;
+                }
+                // Reads any plain (uncompressed) .glb: every mesh in the scene, with node transforms, merged into one geometry.
+                function parseGLBBytes(bytes) {
+                    const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+                    if (dv.getUint32(0, true) !== 0x46546C67) throw new Error('Not a .glb file');
+                    let json = null, binStart = 0, off = 12;
+                    while (off + 8 <= bytes.byteLength) {
+                        const len = dv.getUint32(off, true), type = dv.getUint32(off + 4, true);
+                        if (type === 0x4E4F534A) json = JSON.parse(new TextDecoder().decode(bytes.subarray(off + 8, off + 8 + len)));
+                        else if (type === 0x004E4942 && !binStart) binStart = off + 8;
+                        off += 8 + len + ((4 - (len % 4)) % 4);
+                    }
+                    if (!json || !json.meshes || !json.meshes.length) throw new Error('No mesh in model');
+                    const TYPES = { 5120: Int8Array, 5121: Uint8Array, 5122: Int16Array, 5123: Uint16Array, 5125: Uint32Array, 5126: Float32Array };
+                    const NC = { SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4 };
+                    const readAccessor = (ai) => {
+                        const acc = json.accessors[ai], T = TYPES[acc.componentType], n = NC[acc.type], out = new T(acc.count * n);
+                        if (acc.bufferView === undefined) return out;
                         const bv = json.bufferViews[acc.bufferView];
-                        const off = binStart + (bv.byteOffset || 0) + (acc.byteOffset || 0);
-                        const comps = acc.type === 'VEC3' ? 3 : 1;
-                        const byteLen = acc.count * comps * Type.BYTES_PER_ELEMENT;
-                        return new Type(bytes.slice(off, off + byteLen).buffer);
+                        const base = binStart + (bv.byteOffset || 0) + (acc.byteOffset || 0), stride = bv.byteStride || n * T.BYTES_PER_ELEMENT;
+                        for (let i = 0; i < acc.count; i++) {
+                            const o = base + i * stride;
+                            for (let k = 0; k < n; k++) {
+                                const q = o + k * T.BYTES_PER_ELEMENT;
+                                out[i * n + k] = T === Float32Array ? dv.getFloat32(q, true) : T === Uint32Array ? dv.getUint32(q, true) : T === Uint16Array ? dv.getUint16(q, true) : T === Int16Array ? dv.getInt16(q, true) : T === Uint8Array ? dv.getUint8(q) : dv.getInt8(q);
+                            }
+                        }
+                        return out;
                     };
-
+                    const P = [], I = [];
+                    const addMesh = (mi, m4) => {
+                        for (const prim of json.meshes[mi].primitives) {
+                            if (prim.mode !== undefined && prim.mode !== 4) continue;
+                            if (prim.attributes.POSITION === undefined) continue;
+                            const pos = readAccessor(prim.attributes.POSITION), base = P.length / 3, v = new THREE.Vector3();
+                            for (let i = 0; i < pos.length; i += 3) { v.set(pos[i], pos[i + 1], pos[i + 2]).applyMatrix4(m4); P.push(v.x, v.y, v.z); }
+                            if (prim.indices !== undefined) { const ix = readAccessor(prim.indices); for (let i = 0; i < ix.length; i++) I.push(base + ix[i]); }
+                            else for (let i = 0; i < pos.length / 3; i++) I.push(base + i);
+                        }
+                    };
+                    const walk = (ni, parent) => {
+                        const nd = json.nodes[ni], m = new THREE.Matrix4();
+                        if (nd.matrix) m.fromArray(nd.matrix);
+                        else m.compose(new THREE.Vector3(...(nd.translation || [0, 0, 0])), new THREE.Quaternion(...(nd.rotation || [0, 0, 0, 1])), new THREE.Vector3(...(nd.scale || [1, 1, 1])));
+                        const w = new THREE.Matrix4().multiplyMatrices(parent, m);
+                        if (nd.mesh !== undefined) addMesh(nd.mesh, w);
+                        (nd.children || []).forEach(c => walk(c, w));
+                    };
+                    if (json.nodes && json.scenes) { const sc = json.scenes[json.scene || 0]; (sc.nodes || []).forEach(n => walk(n, new THREE.Matrix4())); }
+                    else json.meshes.forEach((_, i) => addMesh(i, new THREE.Matrix4()));
+                    if (!P.length) throw new Error('Model has no usable triangles');
                     const geo = new THREE.BufferGeometry();
-                    geo.setAttribute('position', new THREE.BufferAttribute(readAccessor(prim.attributes.POSITION, Float32Array), 3));
-                    const idxAcc = json.accessors[prim.indices];
-                    const IdxType = idxAcc.componentType === 5125 ? Uint32Array : Uint16Array;
-                    geo.setIndex(new THREE.BufferAttribute(readAccessor(prim.indices, IdxType), 1));
-
+                    geo.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
+                    geo.setIndex(new THREE.BufferAttribute(P.length / 3 > 65535 ? new Uint32Array(I) : new Uint16Array(I), 1));
                     // Centre the model on its bounding box so it spins around its own middle
                     geo.computeBoundingBox();
                     const c = new THREE.Vector3();
@@ -2463,29 +2530,70 @@ async function saveOrderToDb(order) {
                     return g;
                 }
 
-                // Per-garment display scale + where the print canvas sits on the chest / back (model units)
-                const GARMENT_SPECS = {
-                    tee:    { glb: 'tee',    scale: 0.82, print: { cx: 0, cy: 0.08,  size: 1.30 } },
-                    hoodie: { glb: 'hoodie', scale: 0.86, print: { cx: 0, cy: -0.04, size: 1.00 } }
+                // Display scale + print area per garment. The two built-in models keep their hand-tuned values;
+                // anything uploaded from the admin is auto-fitted from its own bounding box.
+                const BUILTIN_SPECS = {
+                    tee:    { scale: 0.82, print: { cx: 0, cy: 0.08,  size: 1.30 } },
+                    hoodie: { scale: 0.86, print: { cx: 0, cy: -0.04, size: 1.00 } }
                 };
-
+                function specFor(g, geo) {
+                    const bb = geo.boundingBox, w = bb.max.x - bb.min.x, h = bb.max.y - bb.min.y;
+                    const custom = g.sizeAdj != null || g.printSize != null || g.printY != null;
+                    if (g.builtin && BUILTIN_SPECS[g.builtin] && !custom) return BUILTIN_SPECS[g.builtin];
+                    return {
+                        scale: ((Number(g.sizeAdj) || 100) / 100) * 1.65 / Math.max(w, h),
+                        print: { cx: 0, cy: ((g.printY != null ? Number(g.printY) : 3) / 100) * h, size: ((Number(g.printSize) || 70) / 100) * w }
+                    };
+                }
+                async function garmentBytes(g) {
+                    if (g.builtin && window.FEKRA_GLB && window.FEKRA_GLB[g.builtin]) return b64ToBytes(window.FEKRA_GLB[g.builtin]);
+                    if (g.url) { const r = await fetch(g.url); if (!r.ok) throw new Error('Model download failed'); return new Uint8Array(await r.arrayBuffer()); }
+                    if (typeof fekraDb !== 'undefined' && fekraDb) {
+                        const q = await fekraDb.collection('garments').doc(g.id).collection('chunks').get();
+                        const parts = q.docs.map(d => d.data()).sort((a, b) => a.n - b.n).map(d => d.b64);
+                        if (parts.length) return b64ToBytes(parts.join(''));
+                    }
+                    throw new Error('No 3D model saved for ' + g.name);
+                }
                 garmentGroups = {};
-                Object.keys(GARMENT_SPECS).forEach((key) => {
-                    const spec = GARMENT_SPECS[key];
-                    const group = new THREE.Group();
-                    group.scale.setScalar(spec.scale);
-
-                    const geo = parseBoxyGLB(window.FEKRA_GLB[spec.glb]);
-                    group.add(new THREE.Mesh(geo, shirtMaterial));
-                    group.add(new THREE.Mesh(buildPrintDecal(geo, spec.print, +1), frontPrintMat));
-                    group.add(new THREE.Mesh(buildPrintDecal(geo, spec.print, -1), backPrintMat));
-
-                    group.visible = (key === studioState.garment);
-                    shirtGroup.add(group);
-                    garmentGroups[key] = group;
-                });
+                const loadingGarments = {};
+                const garmentSig = (g) => JSON.stringify([g.modelVer || 0, g.builtin || '', g.url || '', g.sizeAdj, g.printSize, g.printY]);
+                async function ensureGarment(g) {
+                    const sig = garmentSig(g), old = garmentGroups[g.id];
+                    if (old && old.userData.sig === sig) return;
+                    if (loadingGarments[g.id] === sig) return;
+                    loadingGarments[g.id] = sig;
+                    try {
+                        const geo = parseGLBBytes(await garmentBytes(g));
+                        if (loadingGarments[g.id] !== sig) return;
+                        const spec = specFor(g, geo);
+                        const group = new THREE.Group();
+                        group.scale.setScalar(spec.scale);
+                        group.userData.sig = sig;
+                        group.add(new THREE.Mesh(geo, shirtMaterial));
+                        group.add(new THREE.Mesh(buildPrintDecal(geo, spec.print, +1), frontPrintMat));
+                        group.add(new THREE.Mesh(buildPrintDecal(geo, spec.print, -1), backPrintMat));
+                        group.visible = (g.id === studioState.garment);
+                        if (old) { shirtGroup.remove(old); old.children.forEach(m => m.geometry && m.geometry.dispose()); }
+                        shirtGroup.add(group);
+                        garmentGroups[g.id] = group;
+                        redraw3DPrintTextures();
+                    } catch (err) {
+                        console.warn('Garment "' + g.id + '" could not be loaded:', err);
+                        delete loadingGarments[g.id];
+                    }
+                }
+                function syncGarments() {
+                    const ids = garments.map(g => g.id);
+                    Object.keys(garmentGroups).forEach((k) => { if (!ids.includes(k)) { shirtGroup.remove(garmentGroups[k]); delete garmentGroups[k]; } });
+                    buildGarmentSwitcher();
+                    garments.forEach(ensureGarment);
+                    Object.keys(garmentGroups).forEach((k) => { garmentGroups[k].visible = (k === studioState.garment); });
+                }
+                window.fekraSyncGarments = syncGarments;
 
                 threeScene.add(shirtGroup);
+                setTimeout(syncGarments, 0);
                 redraw3DPrintTextures();
                 syncTransformSliders();
 
@@ -2658,36 +2766,20 @@ async function saveOrderToDb(order) {
                     shirtGroup.rotation.set(0, 0, 0);
                 });
 
-                // Garment switcher: Boxy Tee <-> Boxy Hoodie (same print, colour and transforms carry over)
-                const GARMENT_BTN_ON = 'flex-1 px-3 py-2.5 bg-champagne text-obsidian text-[11px] uppercase tracking-widest font-medium transition-colors';
-                const GARMENT_BTN_OFF = 'flex-1 px-3 py-2.5 bg-charcoal text-alabaster text-[11px] uppercase tracking-widest hover:text-champagne transition-colors';
-                const GARMENT_NAMES = { tee: 'Boxy Tee', hoodie: 'Boxy Hoodie' };
-
+                // Garment switcher (buttons are built by buildGarmentSwitcher; the print, colour and transforms carry over)
                 function setGarment(key) {
-                    if (!garmentGroups[key]) return;
+                    if (!garments.some(g => g.id === key)) return;
                     studioState.garment = key;
                     Object.keys(garmentGroups).forEach((k) => { garmentGroups[k].visible = (k === key); });
-                    const teeBtn = document.getElementById('garment-tee-btn');
-                    const hoodieBtn = document.getElementById('garment-hoodie-btn');
-                    if (teeBtn) {
-                        teeBtn.className = key === 'tee' ? GARMENT_BTN_ON : GARMENT_BTN_OFF;
-                        teeBtn.setAttribute('aria-pressed', key === 'tee' ? 'true' : 'false');
-                    }
-                    if (hoodieBtn) {
-                        hoodieBtn.className = key === 'hoodie' ? GARMENT_BTN_ON : GARMENT_BTN_OFF;
-                        hoodieBtn.setAttribute('aria-pressed', key === 'hoodie' ? 'true' : 'false');
-                    }
-                    const inspectName = document.getElementById('inspect-garment-name');
-                    if (inspectName) inspectName.textContent = key === 'hoodie' ? 'Hoodie' : 'Tee';
+                    buildGarmentSwitcher();
                     if (shirtGroup) {
                         shirtGroup.position.set(0, 0, 0);
                         shirtGroup.rotation.set(0, studioState.activeTransformZone === 'back' ? Math.PI : 0, 0);
                     }
                 }
+                window.fekraSetGarment = setGarment;
                 window.setStudioGarment = setGarment;
-                window.getStudioGarmentName = () => GARMENT_NAMES[studioState.garment] || 'Boxy Tee';
-                document.getElementById('garment-tee-btn')?.addEventListener('click', () => setGarment('tee'));
-                document.getElementById('garment-hoodie-btn')?.addEventListener('click', () => setGarment('hoodie'));
+                window.getStudioGarmentName = () => garmentById(studioState.garment).name;
 
                 // Mode buttons: Inspect 3D Tee vs Edit Print
                 const orbitModeBtn = document.getElementById('mode-orbit-btn');
@@ -2820,15 +2912,13 @@ async function saveOrderToDb(order) {
         function buildStudioColors() {
             const box = document.getElementById('color-selector');
             if (!box) return;
-            const key = studioState.garment === 'hoodie' ? 'studioHoodie' : 'studioTee';
-            const list = BASE_STUDIO_COLORS.concat(palette.filter(c => c[key]));
+            const list = BASE_STUDIO_COLORS.concat(palette.filter(c => colorOkFor(c, studioState.garment)));
             const prev = box.querySelector('.color-option.active');
             const prevHex = prev ? prev.dataset.color : null;
             box.innerHTML = list.map(c => `<button type="button" data-color="${c.hex}" data-stroke="${c.ink}" data-text="${c.ink}" data-name="${escH(c.name)}" class="color-option flex items-center space-x-2.5 p-3 rounded-sm border border-white/15 bg-obsidian/50 text-xs text-alabaster"><span class="w-4 h-4 rounded-full border border-white/30" style="background:${c.hex}"></span><span>${escH(c.name)}</span></button>`).join('');
             const pick = [...box.querySelectorAll('.color-option')].find(x => x.dataset.color === prevHex) || box.querySelector('.color-option');
             try { pick.click(); } catch (err) { console.warn(err); }
         }
-        ['garment-tee-btn', 'garment-hoodie-btn'].forEach(id => document.getElementById(id)?.addEventListener('click', () => setTimeout(buildStudioColors, 0)));
 
         // Print Zone Checkboxes (Front & Back)
         const frontCheckEl = document.getElementById('zone-front-check');
@@ -3103,12 +3193,7 @@ async function saveOrderToDb(order) {
             });
         });
 
-        // Price of a custom Create Your Fekra piece, by garment (edit these two numbers to change the bag price)
-        const CUSTOM_PIECE_PRICES = {
-            tee:    { label: 'Boxy Tee',    price: 160 },
-            hoodie: { label: 'Boxy Hoodie', price: 300 }
-        };
-
+        
         // Small bag thumbnail: the chosen garment colour with the front print on top
         function makeCustomThumb() {
             try {
@@ -3197,8 +3282,8 @@ async function saveOrderToDb(order) {
             const confirmBox = document.getElementById('bespoke-confirmation');
             const confirmText = document.getElementById('bespoke-confirm-text');
             const contactVal = (document.getElementById('bespoke-contact').value || '').trim();
-            const garmentKey = studioState.garment === 'hoodie' ? 'hoodie' : 'tee';
-            const garmentName = CUSTOM_PIECE_PRICES[garmentKey].label;
+            const garmentObj = garmentById(studioState.garment);
+            const garmentName = garmentObj.name;
 
             const design = collectCustomDesign(activeColorName, garmentName);
 
@@ -3207,7 +3292,7 @@ async function saveOrderToDb(order) {
                 id: 'custom-' + Date.now(),
                 title: `Your Fekra — ${garmentName}`,
                 category: 'custom',
-                price: CUSTOM_PIECE_PRICES[garmentKey].price,
+                price: Number(garmentObj.price) || 0,
                 image: makeCustomThumb(),
                 size: `Size ${studioState.size} • ${activeColorName} • ${zones}`,
                 sleeveDate: '',
@@ -3239,63 +3324,38 @@ async function saveOrderToDb(order) {
             }
         });
 
-        // 11. Size Chart Renderer (Boxy T-Shirts & Hoodies)
-        const sizeChartData = {
-            'boxy-tee': {
-                subtitle: 'Cut in a dropped-shoulder boxy silhouette. Take your true size for a relaxed drape.',
-                rows: [
-                    ['XS', '55 cm', '65 cm', '52 cm', '21 cm'],
-                    ['S', '58 cm', '67 cm', '54 cm', '22 cm'],
-                    ['M', '61 cm', '69 cm', '57 cm', '23 cm'],
-                    ['L', '64 cm', '71 cm', '60 cm', '24 cm'],
-                    ['XL', '67 cm', '73 cm', '62 cm', '25 cm'],
-                    ['XXL', '70 cm', '75 cm', '64 cm', '26 cm']
-                ]
-            },
-            'boxy-hoodie': {
-                subtitle: 'Boxy hoodie cut with wide dropped shoulders, a double-lined hood, and a rib hem.',
-                rows: [
-                    ['XS', '60 cm', '63 cm', '58 cm', '57 cm'],
-                    ['S', '63 cm', '65 cm', '60 cm', '58 cm'],
-                    ['M', '66 cm', '67 cm', '63 cm', '60 cm'],
-                    ['L', '69 cm', '69 cm', '66 cm', '62 cm'],
-                    ['XL', '72 cm', '71 cm', '68 cm', '63 cm'],
-                    ['XXL', '75 cm', '73 cm', '70 cm', '64 cm']
-                ]
-            }
-        };
-
-        function renderSizeChart(chartKey = 'boxy-tee') {
-            const entry = sizeChartData[chartKey] || sizeChartData['boxy-tee'];
-            const tbody = document.getElementById('size-chart-tbody');
-            const subtitle = document.getElementById('size-chart-subtitle');
-            if (subtitle) subtitle.textContent = entry.subtitle;
-            if (tbody) {
-                tbody.innerHTML = entry.rows.map(([sz, chest, len, shoulder, sleeve]) => `
-                    <tr class="hover:bg-charcoal/40 transition-colors">
-                        <td class="py-4 px-6 font-medium text-champagne">${sz}</td>
-                        <td class="py-4 px-6">${chest}</td>
-                        <td class="py-4 px-6">${len}</td>
-                        <td class="py-4 px-6">${shoulder}</td>
-                        <td class="py-4 px-6">${sleeve}</td>
-                    </tr>
-                `).join('');
-            }
+        // 11. Size Chart Renderer: tabs, headings and rows all come from the garments you edit in the admin
+        function renderSizeChartTabs() {
+            const box = document.getElementById('size-chart-tabs');
+            if (!box) return;
+            const list = garments.filter(g => g.chart && g.chart.rows);
+            if (!list.some(g => g.id === activeChart)) activeChart = list[0] ? list[0].id : null;
+            box.innerHTML = list.map(g => {
+                const on = g.id === activeChart, label = siteLang === 'ar' ? (g.chartTabAr || g.chartTab || g.name) : (g.chartTab || g.name);
+                return `<button type="button" data-chart="${escH(g.id)}" class="chart-tab-btn px-5 py-2.5 rounded-sm border text-xs uppercase tracking-widest transition-all ${on ? 'active border-champagne bg-champagne text-obsidian font-medium' : 'border-white/15 text-alabaster/80 hover:border-champagne hover:text-champagne'}">${escH(label)}</button>`;
+            }).join('');
+            box.style.display = list.length > 1 ? '' : 'none';
         }
-
-        document.querySelectorAll('.chart-tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.chart-tab-btn').forEach(b => {
-                    b.classList.remove('active', 'bg-champagne', 'text-obsidian', 'border-champagne', 'font-medium');
-                    b.classList.add('border-white/15', 'text-alabaster/80');
-                });
-                btn.classList.add('active', 'bg-champagne', 'text-obsidian', 'border-champagne', 'font-medium');
-                btn.classList.remove('border-white/15', 'text-alabaster/80');
-                renderSizeChart(btn.dataset.chart);
-            });
+        function renderSizeChart(chartKey) {
+            if (chartKey) activeChart = chartKey;
+            const g = garments.find(x => x.id === activeChart && x.chart);
+            const section = document.getElementById('size-chart');
+            if (section) section.style.display = g ? '' : 'none';
+            if (!g) return;
+            const ar = siteLang === 'ar';
+            const cols = (g.chart.cols || []), rows = g.chart.rows || [];
+            const head = document.getElementById('size-chart-thead-row'), tbody = document.getElementById('size-chart-tbody');
+            const subtitle = document.getElementById('size-chart-subtitle');
+            if (subtitle) subtitle.textContent = (ar && g.subtitleAr) ? g.subtitleAr : (g.subtitle || '');
+            if (head) head.innerHTML = cols.map(c => `<th class="py-4 px-6 font-medium">${escH(ar && c.ar ? c.ar : c.en)}</th>`).join('');
+            if (tbody) tbody.innerHTML = rows.map(r => `<tr class="hover:bg-charcoal/40 transition-colors">${cols.map((_, i) => `<td class="py-4 px-6${i === 0 ? ' font-medium text-champagne' : ''}">${escH(r[i] == null ? '' : r[i])}</td>`).join('')}</tr>`).join('');
+        }
+        document.getElementById('size-chart-tabs')?.addEventListener('click', (e) => {
+            const b = e.target.closest('[data-chart]');
+            if (b) { renderSizeChart(b.dataset.chart); renderSizeChartTabs(); }
         });
 
-        // 12. Toast Notification Helper
+// 12. Toast Notification Helper
         let toastTimeout = null;
         function showToast(message) {
             const toast = document.getElementById('toast-notification');
@@ -3353,7 +3413,7 @@ async function saveOrderToDb(order) {
         // Initial Render
         applyLang(siteLang);
         loadCatalog();
-        renderSizeChart('boxy-tee');
+        refreshGarments();
         updateCartUI();
         window.addEventListener('DOMContentLoaded', init3DTShirtStudio);
         if (document.readyState === 'complete' || document.readyState === 'interactive') {

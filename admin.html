@@ -56,13 +56,13 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const uname=u=>u.trim().toLowerCase().replace(/\s+/g,'');
 const slug=s=>s.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 const wa=n=>{let d=String(n||'').replace(/\D/g,'');return d.startsWith('00')?d.slice(2):d.startsWith('0')?'20'+d.slice(1):d};
-const PERMS={products:'Edit products',chapters:'Edit chapters',colors:'Edit studio colors',content:'Edit website text',orders_view:'See orders',orders_edit:'Update orders',orders_delete:'Delete orders'};
+const PERMS={products:'Edit products',chapters:'Edit chapters',colors:'Edit studio colors',garments:'Edit garments, 3D models & size charts',content:'Edit website text',orders_view:'See orders',orders_edit:'Update orders',orders_delete:'Delete orders'};
 const STAT=['new','confirmed','printing','shipped','delivered','cancelled'];
-let me,tab,chs=[],cols=[],prs=[],ors=[],stf=[],cfg={},unsub=[],of='all',oq='';
+let me,tab,chs=[],cols=[],grs=[],prs=[],ors=[],stf=[],cfg={},unsub=[],of='all',oq='';
 const can=p=>me&&(me.role==='owner'||(me.perms||[]).includes(p));
 const toast=m=>{const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,2800)};
 const fail=e=>{console.error(e);toast(e.code==='permission-denied'?'You do not have permission for that.':'Error: '+e.message)};
-const modal=h=>{$('#mb').innerHTML=h;$('#m').hidden=false},closeM=()=>$('#m').hidden=true;
+const modal=h=>{$('#mb').style.maxWidth='';$('#mb').innerHTML=h;$('#m').hidden=false},closeM=()=>$('#m').hidden=true;
 $('#m').onclick=e=>{if(e.target.id==='m')closeM()};
 
 // ---------- login ----------
@@ -78,6 +78,7 @@ function start(){$('#login').hidden=true;$('#app').hidden=false;$('#who').textCo
  const sub=(q,fn)=>unsub.push(q.onSnapshot(fn,fail)),L=s=>s.docs.map(d=>({id:d.id,...d.data()}));
  sub(db.collection('chapters'),s=>{chs=L(s).sort((a,b)=>(a.order||0)-(b.order||0));draw('chapters','products')});
  sub(db.collection('colors'),s=>{cols=L(s).sort((a,b)=>(a.order||0)-(b.order||0));draw('colors')});
+ if(can('garments'))sub(db.collection('garments'),s=>{grs=L(s).sort((a,b)=>(a.order||0)-(b.order||0));draw('garments','colors')});
  if(can('products'))sub(db.collection('products'),s=>{prs=L(s).sort((a,b)=>(a.title||'').localeCompare(b.title||''));draw('products')});
  if(can('orders_view')||can('orders_edit'))sub(db.collection('orders').orderBy('createdAt','desc').limit(300),s=>{ors=L(s);draw('orders')});
  if(me.role==='owner')sub(db.collection('users'),s=>{stf=L(s);draw('staff')});
@@ -85,7 +86,7 @@ function start(){$('#login').hidden=true;$('#app').hidden=false;$('#who').textCo
  if(can('orders_delete'))sweep().then(n=>n&&toast(n+' orders older than 30 days were cleaned up')).catch(()=>{});
  if(me.role==='owner')db.collection('meta').doc('status').set({done:true},{merge:true}).catch(()=>{});
  const t=[];if(can('orders_view')||can('orders_edit'))t.push(['orders','Orders']);if(can('products'))t.push(['products','Products']);
- if(can('chapters'))t.push(['chapters','Chapters']);if(can('colors'))t.push(['colors','Studio colors']);if(can('content'))t.push(['site','Website text']);if(me.role==='owner')t.push(['staff','Team'],['settings','Settings']);
+ if(can('chapters'))t.push(['chapters','Chapters']);if(can('colors'))t.push(['colors','Studio colors']);if(can('garments'))t.push(['garments','Garments & sizes']);if(can('content'))t.push(['site','Website text']);if(me.role==='owner')t.push(['staff','Team'],['settings','Settings']);
  $('#tabs').innerHTML=t.map(x=>`<button data-a="tab" data-id="${x[0]}">${x[1]}</button>`).join('');
  t.length?go(t[0][0]):$('#main').innerHTML='<p class="mu">Your account has no permissions yet. Ask an owner.</p>'}
 const go=t=>{tab=t;document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.id===t));render()};
@@ -113,10 +114,20 @@ views.chapters=()=>`<div class="bar"><h2>Chapters <small>${chs.length}</small></
  chs.map(c=>`<div class="card" style="${c.archived?'opacity:.6':''}"><div class="row"><b>${esc(c.name)}</b><span>${esc(c.arabic)}</span>${c.archived?'<span class="tag cancelled">archived · hidden on website</span>':''}<span class="tag">${c.type==='pair'?'pair of 2':'single tee'}</span><span class="mu">order ${c.order||0}</span><button class="btn g s" data-a="carch" data-id="${c.id}">${c.archived?'Restore':'Archive'}</button><button class="btn g s" data-a="cedit" data-id="${c.id}">Edit</button><button class="btn r s" data-a="cdel" data-id="${c.id}">Delete</button></div><div class="mu">${esc(c.title)}</div></div>`).join('');
 views.colors=()=>`<div class="bar"><h2>Bespoke Studio colors <small>${cols.length}</small></h2><button class="btn" data-a="coledit">+ Add color</button></div>
  <p class="mu">Black and White are always available in the studio. Add every other color you can produce for custom pieces here. Colors for a specific product are chosen inside that product (Products tab).</p>`+
- (cols.length?cols.map(c=>`<div class="card"><div class="row"><span style="width:26px;height:26px;border-radius:50%;background:${esc(c.hex)};border:1px solid #fff4"></span><b>${esc(c.name)}</b><span class="mu">${esc(c.hex)}</span><span class="tag">${c.studioTee?'studio tee':'—'}</span><span class="tag">${c.studioHoodie?'studio hoodie':'—'}</span><button class="btn g s" data-a="coledit" data-id="${c.id}">Edit</button><button class="btn r s" data-a="coldel" data-id="${c.id}">Delete</button></div></div>`).join(''):'<p class="mu">No extra colors yet. Only Black and White are offered.</p>');
+ (cols.length?cols.map(c=>`<div class="card"><div class="row"><span style="width:26px;height:26px;border-radius:50%;background:${esc(c.hex)};border:1px solid #fff4"></span><b>${esc(c.name)}</b><span class="mu">${esc(c.hex)}</span>${gList().map(g=>colorOk(c,g.id)?`<span class="tag">${esc(g.name)}</span>`:'').join('')}<button class="btn g s" data-a="coledit" data-id="${c.id}">Edit</button><button class="btn r s" data-a="coldel" data-id="${c.id}">Delete</button></div></div>`).join(''):'<p class="mu">No extra colors yet. Only Black and White are offered.</p>');
 views.site=()=>`<div class="bar"><h2>Website text</h2><div class="act" style="margin:0"><button class="btn g s" data-a="slang" data-id="en">English</button><button class="btn g s" data-a="slang" data-id="ar">العربية</button></div></div>
  <div class="card row" style="position:sticky;top:64px;z-index:4;margin-bottom:10px"><span class="mu" id="sitesel">Click any text in the preview below to edit it right there. Switch English / العربية to edit each language.</span><button class="btn" id="ssave" data-a="ssave" disabled>Save Changes</button><button class="btn g s" data-a="sreset">Reset to original</button></div>
  <iframe id="sitefr" src="index.html?fekra-edit=1" style="width:100%;height:72vh;border:1px solid var(--line);border-radius:8px;background:#000"></iframe>`;
+const DEF_CHART_COLS=[{en:'Size',ar:'المقاس'},{en:'Chest Width (cm)',ar:'عرض الصدر (سم)'},{en:'Body Length (cm)',ar:'طول الجسم (سم)'},{en:'Shoulder Width (cm)',ar:'عرض الكتف (سم)'},{en:'Sleeve Length (cm)',ar:'طول الكم (سم)'}];
+const DEF_GARMENTS=[
+ {id:'tee',order:1,name:'Boxy Tee',nameAr:'تيشيرت بوكسي',short:'Tee',price:160,builtin:'tee',visible:true,chartTab:'Boxy Cut T-Shirts',chartTabAr:'تيشيرتات بقصّة بوكسي',subtitle:'Cut in a dropped-shoulder boxy silhouette. Take your true size for a relaxed drape.',subtitleAr:'',chart:{cols:DEF_CHART_COLS,rows:[['XS','55 cm','65 cm','52 cm','21 cm'],['S','58 cm','67 cm','54 cm','22 cm'],['M','61 cm','69 cm','57 cm','23 cm'],['L','64 cm','71 cm','60 cm','24 cm'],['XL','67 cm','73 cm','62 cm','25 cm'],['XXL','70 cm','75 cm','64 cm','26 cm']]}},
+ {id:'hoodie',order:2,name:'Boxy Hoodie',nameAr:'هودي بوكسي',short:'Hoodie',price:300,builtin:'hoodie',visible:true,chartTab:'Boxy Fit Hoodies',chartTabAr:'هوديز بقصّة بوكسي',subtitle:'Boxy hoodie cut with wide dropped shoulders, a double-lined hood, and a rib hem.',subtitleAr:'',chart:{cols:DEF_CHART_COLS,rows:[['XS','60 cm','63 cm','58 cm','57 cm'],['S','63 cm','65 cm','60 cm','58 cm'],['M','66 cm','67 cm','63 cm','60 cm'],['L','69 cm','69 cm','66 cm','62 cm'],['XL','72 cm','71 cm','68 cm','63 cm'],['XXL','75 cm','73 cm','70 cm','64 cm']]}}];
+const gList=()=>grs.length?grs:DEF_GARMENTS;
+const colorOk=(c,id)=>Array.isArray(c.studioGarments)?c.studioGarments.includes(id):(id==='hoodie'?c.studioHoodie!==false:id==='tee'?c.studioTee!==false:false);
+views.garments=()=>`<div class="bar"><h2>Garments &amp; size charts <small>${grs.length}</small></h2><button class="btn" data-a="gedit">+ Add garment</button></div>
+ <p class="mu">Each garment has its own 3D model (.glb), studio price and size chart. Add a garment to get a new button in the 3D studio and a new tab in the size chart; delete one to remove it from both.</p>`+
+ (grs.length?grs.map(g=>`<div class="card"><div class="row"><b>${esc(g.name)}</b><span class="mu">EGP ${g.price||0} · ${g.builtin?'built-in 3D model':g.url?'3D model from link':'uploaded 3D model'} · ${((g.chart||{}).rows||[]).length} sizes</span>${g.visible===false?'<span class="tag cancelled">hidden</span>':''}<span class="mu">order ${g.order||0}</span><button class="btn g s" data-a="gedit" data-id="${esc(g.id)}">Edit</button><button class="btn r s" data-a="gdel" data-id="${esc(g.id)}">Delete</button></div></div>`).join('')
+ :`<div class="card"><p style="margin-top:0">Nothing saved yet. The website is currently showing the built-in <b>Boxy Tee</b> and <b>Boxy Hoodie</b>.</p><button class="btn" data-a="gseed">Import them so I can edit them</button></div>`);
 views.staff=()=>`<div class="bar"><h2>Team</h2><button class="btn" data-a="snew">+ Add team member</button></div>`+
  stf.map(u=>`<div class="card"><div class="row"><b>${esc(u.username)}</b><span class="tag">${esc(u.role)}</span>${u.active===false?'<span class="tag cancelled">disabled</span>':''}${u.id===me.id?'<span class="mu">(you)</span>':''}</div>`+
  (u.role==='owner'?'<p class="mu" style="margin:0">Full access</p>':`<div class="perms">${Object.entries(PERMS).map(([k,v])=>`<label class="ck"><input type="checkbox" data-ch="perm" data-id="${u.id}" data-k="${k}" ${(u.perms||[]).includes(k)?'checked':''}> ${v}</label>`).join('')}</div>`)+
@@ -151,12 +162,66 @@ function cform(c){modal(`<h3>${c.id?'Edit':'New'} chapter</h3><form id="cf"><div
   await db.collection('chapters').doc(id).set({name:E.name.value.trim(),arabic:E.arabic.value.trim(),bannerArabic:E.bannerArabic.value.trim(),order:+E.order.value||0,type:E.type.value,tag:E.tag.value.trim(),title:E.title.value.trim(),story:E.story.value.trim()},{merge:true});closeM();toast('Chapter saved')}catch(x){fail(x)}}}
 function colform(c){modal(`<h3>${c.id?'Edit':'New'} studio color</h3><form id="kf"><label>Name<input name="name" required value="${esc(c.name)}" placeholder="Desert Sand"></label>
  <div class="g2"><label>Shirt color<input name="hex" type="color" value="${esc(c.hex||'#141416')}" style="height:42px;padding:3px"></label><label>Print ink on this shirt<input name="ink" type="color" value="${esc(c.ink||'#C5A880')}" style="height:42px;padding:3px"></label></div>
- <label class="ck"><input type="checkbox" name="studioTee" ${c.studioTee===false?'':'checked'}> Available in the bespoke studio for the <b>tee</b></label>
- <label class="ck"><input type="checkbox" name="studioHoodie" ${c.studioHoodie===false?'':'checked'}> Available in the bespoke studio for the <b>hoodie</b></label>
+ <label>Available in the bespoke studio for</label>${gList().map(g=>`<label class="ck"><input type="checkbox" class="kg" value="${esc(g.id)}" ${(c.id?colorOk(c,g.id):true)?'checked':''}> ${esc(g.name)}</label>`).join('')}
  <label>Order<input name="order" type="number" value="${c.order??cols.length+1}"></label>
  <div class="act" style="margin-top:16px"><button class="btn">Save</button><button type="button" class="btn g" data-a="close">Cancel</button></div></form>`);
- $('#kf').onsubmit=async e=>{e.preventDefault();const E=e.target.elements;try{const id=c.id||slug(E.name.value);if(!id)throw Error('Please enter a name');if(!c.id&&cols.some(x=>x.id===id))throw Error('A color with this name already exists');
-  await db.collection('colors').doc(id).set({name:E.name.value.trim(),hex:E.hex.value,ink:E.ink.value,studioTee:E.studioTee.checked,studioHoodie:E.studioHoodie.checked,order:+E.order.value||0},{merge:true});closeM();toast('Color saved')}catch(x){fail(x)}}}
+ $('#kf').onsubmit=async e=>{e.preventDefault();const E=e.target.elements;try{const ids=[...document.querySelectorAll('#kf .kg:checked')].map(x=>x.value),id=c.id||slug(E.name.value);if(!id)throw Error('Please enter a name');if(!c.id&&cols.some(x=>x.id===id))throw Error('A color with this name already exists');
+  await db.collection('colors').doc(id).set({name:E.name.value.trim(),hex:E.hex.value,ink:E.ink.value,studioGarments:ids,studioTee:ids.includes('tee'),studioHoodie:ids.includes('hoodie'),order:+E.order.value||0},{merge:true});closeM();toast('Color saved')}catch(x){fail(x)}}}
+// ---------- garments: 3D model + price + size chart ----------
+let gc={cols:[],rows:[]};
+const toB64=buf=>{const u=new Uint8Array(buf);let o=[];for(let i=0;i<u.length;i+=0x8000)o.push(String.fromCharCode.apply(null,u.subarray(i,i+0x8000)));return btoa(o.join(''))};
+function checkGLB(buf){const dv=new DataView(buf);if(buf.byteLength<20||dv.getUint32(0,true)!==0x46546C67)throw Error('That is not a valid .glb file.');
+ let j;try{j=JSON.parse(new TextDecoder().decode(new Uint8Array(buf,20,dv.getUint32(12,true))))}catch(x){throw Error('Could not read that 3D model.')}
+ if([...(j.extensionsRequired||[]),...(j.extensionsUsed||[])].some(x=>/draco|meshopt|quantization/i.test(x)))throw Error('Compressed models are not supported. Export the .glb again without Draco / meshopt compression.');
+ if(!(j.meshes||[]).length)throw Error('No 3D mesh found inside that file.')}
+const gSync=()=>{const f=$('#gf');if(!f)return;gc.cols=[...f.querySelectorAll('.gce')].map((x,i)=>({en:x.value.trim(),ar:f.querySelectorAll('.gca')[i].value.trim()}));
+ gc.rows=[...f.querySelectorAll('.grow')].map(r=>[...r.querySelectorAll('.gcell')].map(x=>x.value.trim()))};
+const gDraw=()=>{$('#gchart').innerHTML=`<div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%"><thead><tr>${gc.cols.map((c,i)=>`<th style="padding:3px;min-width:120px;font-weight:400"><input class="gce" placeholder="Column title" value="${esc(c.en)}"><input class="gca" dir="rtl" placeholder="عربي (optional)" value="${esc(c.ar)}">${gc.cols.length>1?`<button type="button" class="btn r s" data-a="gdelcolm" data-id="${i}" style="margin-top:4px">✕ column</button>`:''}</th>`).join('')}<th></th></tr></thead>
+ <tbody>${gc.rows.map((r,ri)=>`<tr class="grow">${gc.cols.map((_,i)=>`<td style="padding:3px"><input class="gcell" value="${esc(r[i])}"></td>`).join('')}<td style="padding:3px"><button type="button" class="btn r s" data-a="gdelrow" data-id="${ri}">✕</button></td></tr>`).join('')}</tbody></table></div>
+ <div class="act"><button type="button" class="btn g s" data-a="gaddrow">+ Add size row</button><button type="button" class="btn g s" data-a="gaddcolm">+ Add column</button></div>`};
+function gform(g){
+ const ch=g.chart||{cols:DEF_CHART_COLS,rows:['XS','S','M','L','XL','XXL'].map(x=>[x,'','','',''])};
+ gc={cols:ch.cols.map(c=>({en:c.en||'',ar:c.ar||''})),rows:(ch.rows||[]).map(r=>r.slice())};
+ const nv=v=>v==null?'':v;
+ modal(`<h3>${g.id?'Edit':'New'} garment</h3><form id="gf">
+ <div class="g2"><label>Name (English)<input name="name" required value="${esc(g.name)}" placeholder="Regular Fit Hoodie"></label><label>Name (Arabic)<input name="nameAr" dir="rtl" value="${esc(g.nameAr)}"></label>
+ <label>Short name (shown in "Inspect 3D ...")<input name="short" value="${esc(g.short)}" placeholder="Hoodie"></label><label>Studio price (EGP)<input name="price" type="number" min="0" required value="${g.price??''}"></label>
+ <label>Order<input name="order" type="number" value="${g.order??grs.length+1}"></label><label class="ck" style="margin-top:30px"><input type="checkbox" name="visible" ${g.visible===false?'':'checked'}> Visible on the website</label></div>
+ <h3 style="margin-top:22px">3D model</h3>
+ <p class="mu" style="margin:4px 0 0">${g.id?(g.builtin?'Currently using the built-in model.':g.url?'Currently using a model from a link.':'Currently using an uploaded model.')+' Choose a new file below to replace it.':'Upload the garment as a .glb file.'}</p>
+ <label>3D model file (.glb, max 4 MB)<input name="file" type="file" accept=".glb,model/gltf-binary"></label>
+ <label>…or link to a .glb file (optional)<input name="url" value="${esc(g.url)}" placeholder="https://"></label>
+ <p class="mu" style="margin:6px 0 0">Model tips: one plain .glb, no Draco/meshopt compression, front of the garment facing +Z, Y up. Colors and textures in the file are ignored, because the studio paints the garment itself.</p>
+ <details style="margin-top:10px"><summary class="mu" style="cursor:pointer">Fine-tune size and print area (optional)</summary><div class="g2">
+ <label>Model size, % (100 = auto-fit)<input name="sizeAdj" type="number" min="20" max="300" value="${nv(g.sizeAdj)}" placeholder="100"></label>
+ <label>Print area width, % of garment width<input name="printSize" type="number" min="10" max="150" value="${nv(g.printSize)}" placeholder="70"></label>
+ <label>Print area height, % up (+) / down (−)<input name="printY" type="number" min="-60" max="60" value="${nv(g.printY)}" placeholder="3"></label></div></details>
+ <h3 style="margin-top:22px">Size chart</h3>
+ <div class="g2"><label>Tab label (English)<input name="chartTab" value="${esc(g.chartTab)}" placeholder="Regular Fit Hoodies"></label><label>Tab label (Arabic)<input name="chartTabAr" dir="rtl" value="${esc(g.chartTabAr)}"></label>
+ <label>Sentence under the title (English)<textarea name="subtitle" style="min-height:60px">${esc(g.subtitle)}</textarea></label><label>Sentence under the title (Arabic)<textarea name="subtitleAr" dir="rtl" style="min-height:60px">${esc(g.subtitleAr)}</textarea></label></div>
+ <p class="mu" style="margin:10px 0 0">Type exactly what customers should read in each cell, for example <i>61 cm</i>. The first column is the size name.</p><div id="gchart"></div>
+ <div class="act" style="margin-top:18px"><button class="btn" id="gsave">Save</button><button type="button" class="btn g" data-a="close">Cancel</button></div></form>`);
+ $('#mb').style.maxWidth='920px';gDraw();
+ $('#gf').onsubmit=async e=>{e.preventDefault();const E=e.target.elements,b=$('#gsave');b.disabled=true;
+  try{gSync();if(gc.cols.some(c=>!c.en))throw Error('Every size chart column needs a title.');
+   const id=g.id||slug(E.name.value);if(!id)throw Error('Please enter a name using letters or numbers');if(!g.id&&grs.some(x=>x.id===id))throw Error('A garment with this name already exists');
+   const num=v=>v===''?FV.delete():+v;
+   const d={name:E.name.value.trim(),nameAr:E.nameAr.value.trim(),short:E.short.value.trim()||E.name.value.trim(),price:+E.price.value||0,order:+E.order.value||0,visible:E.visible.checked,
+    chartTab:E.chartTab.value.trim(),chartTabAr:E.chartTabAr.value.trim(),subtitle:E.subtitle.value.trim(),subtitleAr:E.subtitleAr.value.trim(),
+    sizeAdj:num(E.sizeAdj.value),printSize:num(E.printSize.value),printY:num(E.printY.value),
+    chart:{cols:gc.cols,rows:gc.rows},updatedAt:FV.serverTimestamp(),updatedBy:me.username};
+   const file=E.file.files[0],link=E.url.value.trim();let chunks=null,wipe=false;
+   if(file){if(!/\.glb$/i.test(file.name))throw Error('Please choose a .glb file.');if(file.size>4*1024*1024)throw Error('That file is over 4 MB. Reduce the model (fewer triangles) or host it and paste a link instead.');
+    const buf=await file.arrayBuffer();checkGLB(buf);const b64=toB64(buf);chunks=[];for(let i=0;i<b64.length;i+=700000)chunks.push(b64.slice(i,i+700000));
+    Object.assign(d,{builtin:'',url:'',modelVer:Date.now()});wipe=true}
+   else if(link){if(link!==(g.url||'')){Object.assign(d,{builtin:'',url:link,modelVer:Date.now()});wipe=true}}
+   else if(g.url)throw Error('Upload a .glb file, or keep the link.');
+   else if(!g.id)throw Error('Please choose a .glb 3D model file for this garment.');
+   const ref=db.collection('garments').doc(id),bt=db.batch();
+   if(wipe)(await ref.collection('chunks').get()).docs.forEach(x=>bt.delete(x.ref));
+   if(chunks)chunks.forEach((c,n)=>bt.set(ref.collection('chunks').doc('c'+String(n).padStart(3,'0')),{n,b64:c}));
+   bt.set(ref,d,{merge:true});await bt.commit();closeM();toast('Garment saved')}
+  catch(x){fail(x);b.disabled=false}}}
 const UN='pattern="[A-Za-z0-9._-]{3,}" title="Letters, numbers . _ - (3+ characters)"';
 const taken=async n=>(await db.collection('logins').doc(n).get()).exists;
 async function mkAcct(name,pw){const app2=firebase.initializeApp(CFG,'s'+Date.now());
@@ -205,6 +270,14 @@ const acts={tab:(id)=>go(id),close:closeM,out:()=>auth.signOut(),
  carch:id=>{const c=chs.find(x=>x.id===id);db.collection('chapters').doc(id).update({archived:!c.archived}).then(()=>toast(c.archived?'Chapter restored':'Chapter archived: hidden from the website')).catch(fail)},
  paddcol:()=>$('#pcols').insertAdjacentHTML('beforeend',colRow({})),pdelcol:(id,t)=>t.closest('.pcr').remove(),
  coledit:id=>colform(cols.find(c=>c.id===id)||{}),
+ gedit:id=>gform(grs.find(g=>g.id===id)||{}),
+ gaddrow:()=>{gSync();gc.rows.push(gc.cols.map(()=>''));gDraw()},
+ gdelrow:id=>{gSync();gc.rows.splice(+id,1);gDraw()},
+ gaddcolm:()=>{gSync();gc.cols.push({en:'',ar:''});gc.rows.forEach(r=>r.push(''));gDraw()},
+ gdelcolm:id=>{gSync();gc.cols.splice(+id,1);gc.rows.forEach(r=>r.splice(+id,1));gDraw()},
+ gseed:async()=>{try{const b=db.batch();DEF_GARMENTS.forEach(g=>b.set(db.collection('garments').doc(g.id),g));await b.commit();toast('Imported. You can edit them now.')}catch(x){fail(x)}},
+ gdel:async id=>{const g=grs.find(x=>x.id===id);if(!g||!confirm('Delete "'+g.name+'" for good? It disappears from the 3D studio and the size chart.'))return;
+  try{const ref=db.collection('garments').doc(id),b=db.batch();(await ref.collection('chunks').get()).docs.forEach(x=>b.delete(x.ref));b.delete(ref);await b.commit();toast('Deleted')}catch(x){fail(x)}},
  pedit:id=>pform(prs.find(p=>p.id===id)||{}),cedit:id=>cform(chs.find(c=>c.id===id)||{}),snew:sform,elogin:eform,setup:setupForm,
  coldel:id=>confirm('Delete this color? Products that used it simply stop showing it.')&&db.collection('colors').doc(id).delete().then(()=>toast('Deleted')).catch(fail),
  slang:id=>{cur=null;tell({type:'lang',lang:id})},
