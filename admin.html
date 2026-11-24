@@ -35,7 +35,7 @@ main{max-width:1000px;margin:0 auto;padding:20px}.bar{display:flex;flex-wrap:wra
 <label>Username<input id="u" autocomplete="username" required></label>
 <label>Password<input id="p" type="password" autocomplete="current-password" required></label>
 <p class="err" id="le"></p><button class="btn" style="width:100%;margin-top:8px">Log in</button>
-<p style="text-align:center;margin:16px 0 0"><a href="#" data-a="setup" class="mu">First time? Create the first owner</a></p></form></div>
+<p style="text-align:center;margin:16px 0 0"><a href="#" id="setuplink" hidden data-a="setup" class="mu">First time? Create the first owner</a></p></form></div>
 
 <div id="app" hidden>
 <header><span class="brand" style="font-size:18px">FEKRA</span><div id="tabs"></div><small id="who"></small>
@@ -56,9 +56,9 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const uname=u=>u.trim().toLowerCase().replace(/\s+/g,'');
 const slug=s=>s.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 const wa=n=>{let d=String(n||'').replace(/\D/g,'');return d.startsWith('00')?d.slice(2):d.startsWith('0')?'20'+d.slice(1):d};
-const PERMS={products:'Edit products',chapters:'Edit chapters',orders_view:'See orders',orders_edit:'Update orders'};
+const PERMS={products:'Edit products',chapters:'Edit chapters',colors:'Edit colors',orders_view:'See orders',orders_edit:'Update orders',orders_delete:'Delete orders'};
 const STAT=['new','confirmed','printing','shipped','delivered','cancelled'];
-let me,tab,chs=[],prs=[],ors=[],stf=[],cfg={},unsub=[],of='all',oq='';
+let me,tab,chs=[],cols=[],prs=[],ors=[],stf=[],cfg={},unsub=[],of='all',oq='';
 const can=p=>me&&(me.role==='owner'||(me.perms||[]).includes(p));
 const toast=m=>{const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,2800)};
 const fail=e=>{console.error(e);toast(e.code==='permission-denied'?'You do not have permission for that.':'Error: '+e.message)};
@@ -66,6 +66,7 @@ const modal=h=>{$('#mb').innerHTML=h;$('#m').hidden=false},closeM=()=>$('#m').hi
 $('#m').onclick=e=>{if(e.target.id==='m')closeM()};
 
 // ---------- login ----------
+db.collection('meta').doc('status').get().then(d=>{if(!d.exists)$('#setuplink').hidden=false}).catch(()=>{});
 $('#lf').onsubmit=async e=>{e.preventDefault();$('#le').textContent='';
  try{const d=await db.collection('logins').doc(uname($('#u').value)).get();if(!d.exists)throw 0;await auth.signInWithEmailAndPassword(d.data().email,$('#p').value)}catch(x){$('#le').textContent='Wrong username or password.'}};
 auth.onAuthStateChanged(async u=>{unsub.forEach(f=>f());unsub=[];me=null;$('#app').hidden=true;$('#login').hidden=false;if(!u)return;
@@ -76,12 +77,15 @@ auth.onAuthStateChanged(async u=>{unsub.forEach(f=>f());unsub=[];me=null;$('#app
 function start(){$('#login').hidden=true;$('#app').hidden=false;$('#who').textContent=me.username+' · '+me.role;
  const sub=(q,fn)=>unsub.push(q.onSnapshot(fn,fail)),L=s=>s.docs.map(d=>({id:d.id,...d.data()}));
  sub(db.collection('chapters'),s=>{chs=L(s).sort((a,b)=>(a.order||0)-(b.order||0));draw('chapters','products')});
+ sub(db.collection('colors'),s=>{cols=L(s).sort((a,b)=>(a.order||0)-(b.order||0));draw('colors')});
  if(can('products'))sub(db.collection('products'),s=>{prs=L(s).sort((a,b)=>(a.title||'').localeCompare(b.title||''));draw('products')});
  if(can('orders_view')||can('orders_edit'))sub(db.collection('orders').orderBy('createdAt','desc').limit(300),s=>{ors=L(s);draw('orders')});
  if(me.role==='owner')sub(db.collection('users'),s=>{stf=L(s);draw('staff')});
  db.collection('settings').doc('store').get().then(d=>{cfg=d.data()||{};draw('settings')}).catch(()=>{});
+ if(can('orders_delete'))sweep().then(n=>n&&toast(n+' orders older than 30 days were cleaned up')).catch(()=>{});
+ if(me.role==='owner')db.collection('meta').doc('status').set({done:true},{merge:true}).catch(()=>{});
  const t=[];if(can('orders_view')||can('orders_edit'))t.push(['orders','Orders']);if(can('products'))t.push(['products','Products']);
- if(can('chapters'))t.push(['chapters','Chapters']);if(me.role==='owner')t.push(['staff','Team'],['settings','Settings']);
+ if(can('chapters'))t.push(['chapters','Chapters']);if(can('colors'))t.push(['colors','Colors']);if(me.role==='owner')t.push(['staff','Team'],['settings','Settings']);
  $('#tabs').innerHTML=t.map(x=>`<button data-a="tab" data-id="${x[0]}">${x[1]}</button>`).join('');
  t.length?go(t[0][0]):$('#main').innerHTML='<p class="mu">Your account has no permissions yet. Ask an owner.</p>'}
 const go=t=>{tab=t;document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.id===t));render()};
@@ -97,9 +101,9 @@ async function upImg(f){const c=await shrink(f);
 // ---------- views ----------
 const views={};
 views.orders=()=>{const l=ors.filter(o=>(of==='all'||o.status===of)&&(!oq||JSON.stringify([o.orderId,o.customer]).toLowerCase().includes(oq)));
- return `<div class="bar"><h2>Orders <small>${l.length}</small></h2><input data-ch="oq" placeholder="Search name, phone, order ID" value="${esc(oq)}"><select data-ch="of"><option value="all">All statuses</option>${STAT.map(s=>`<option ${s===of?'selected':''}>${s}</option>`).join('')}</select></div>`+
+ return `<div class="bar"><h2>Orders <small>${l.length}</small></h2><input data-ch="oq" placeholder="Search name, phone, order ID" value="${esc(oq)}"><select data-ch="of"><option value="all">All statuses</option>${STAT.map(s=>`<option ${s===of?'selected':''}>${s}</option>`).join('')}</select>${can('orders_delete')?'<button class="btn g s" data-a="osweep">Delete orders older than 30 days</button>':''}</div>`+
  (l.map(o=>{const c=o.customer||{},d=o.createdAt&&o.createdAt.toDate?o.createdAt.toDate().toLocaleString():'';
- return `<div class="card"><div class="row"><b>${esc(o.orderId)}</b><span class="mu">${d}</span><span class="tag ${o.status}">${esc(o.status)}</span>${can('orders_edit')?`<select data-ch="st" data-id="${esc(o.orderId)}">${STAT.map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}</select>`:''}</div>
+ return `<div class="card"><div class="row"><b>${esc(o.orderId)}</b><span class="mu">${d}</span><span class="tag ${o.status}">${esc(o.status)}</span>${can('orders_edit')?`<select data-ch="st" data-id="${esc(o.orderId)}">${STAT.map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}</select>`:''}${can('orders_delete')?`<button class="btn r s" data-a="odel" data-id="${esc(o.orderId)}">Delete</button>`:''}</div>
  <div class="g2"><div><b>${esc(c.name)}</b><br><a target="_blank" href="https://wa.me/${wa(c.whatsapp)}?text=${encodeURIComponent('Hi '+(c.name||'')+', this is FEKRA about your order '+o.orderId)}">${esc(c.whatsapp)}</a><br>${esc(c.governorate)} — ${esc(c.address)}${c.notes?'<br><i>'+esc(c.notes)+'</i>':''}</div>
  <div>${(o.items||[]).map(i=>`${i.qty}× ${esc(i.title)} — ${esc(i.size)}${i.sleeveDate?' · sleeve '+esc(i.sleeveDate):''}${i.design?` <span class="tag">custom ${esc(i.design.garment)}</span>`:''}`).join('<br>')}<br><b>EGP ${o.total}</b> · ${esc(o.paymentLabel||o.payment)}</div></div>
  ${o.fileCount?'<p class="mu" style="margin:8px 0 0">Custom design files: see the Google Sheet / Drive backup.</p>':''}</div>`}).join('')||'<p class="mu">No orders.</p>')};
@@ -107,6 +111,9 @@ views.products=()=>`<div class="bar"><h2>Products <small>${prs.length}</small></
  (prs.length?`<div class="grid">${prs.map(p=>`<div class="card pr"><img src="${esc(p.image)}" alt=""><div><b>${esc(p.title)}</b><div class="mu">${esc((chs.find(c=>c.id===p.category)||{}).name||'no chapter')} · EGP ${p.price}${p.visible===false?' · <span style="color:var(--red)">hidden</span>':''}</div><div class="act"><button class="btn g s" data-a="pedit" data-id="${p.id}">Edit</button><button class="btn r s" data-a="pdel" data-id="${p.id}">Delete</button></div></div></div>`).join('')}</div>`:'<p class="mu">No products yet.</p>');
 views.chapters=()=>`<div class="bar"><h2>Chapters <small>${chs.length}</small></h2><button class="btn" data-a="cedit">+ Add chapter</button></div>`+
  chs.map(c=>`<div class="card"><div class="row"><b>${esc(c.name)}</b><span>${esc(c.arabic)}</span><span class="tag">${c.type==='pair'?'pair of 2':'single tee'}</span><span class="mu">order ${c.order||0}</span><button class="btn g s" data-a="cedit" data-id="${c.id}">Edit</button><button class="btn r s" data-a="cdel" data-id="${c.id}">Delete</button></div><div class="mu">${esc(c.title)}</div></div>`).join('');
+views.colors=()=>`<div class="bar"><h2>Colors <small>${cols.length}</small></h2>${cols.length?'':'<button class="btn g" data-a="colseed">Add the 4 standard colors</button>'}<button class="btn" data-a="coledit">+ Add color</button></div>
+ <p class="mu">This is your color library. Tick which colors each product comes in inside <b>Products</b>, and which are available in the bespoke studio here.</p>`+
+ cols.map(c=>`<div class="card"><div class="row"><span style="width:26px;height:26px;border-radius:50%;background:${esc(c.hex)};border:1px solid #fff4"></span><b>${esc(c.name)}</b><span class="mu">${esc(c.hex)}</span><span class="tag">${c.studioTee?'studio tee':'—'}</span><span class="tag">${c.studioHoodie?'studio hoodie':'—'}</span><button class="btn g s" data-a="coledit" data-id="${c.id}">Edit</button><button class="btn r s" data-a="coldel" data-id="${c.id}">Delete</button></div></div>`).join('');
 views.staff=()=>`<div class="bar"><h2>Team</h2><button class="btn" data-a="snew">+ Add team member</button></div>`+
  stf.map(u=>`<div class="card"><div class="row"><b>${esc(u.username)}</b><span class="tag">${esc(u.role)}</span>${u.active===false?'<span class="tag cancelled">disabled</span>':''}${u.id===me.id?'<span class="mu">(you)</span>':''}</div>`+
  (u.role==='owner'?'<p class="mu" style="margin:0">Full access</p>':`<div class="perms">${Object.entries(PERMS).map(([k,v])=>`<label class="ck"><input type="checkbox" data-ch="perm" data-id="${u.id}" data-k="${k}" ${(u.perms||[]).includes(k)?'checked':''}> ${v}</label>`).join('')}</div>`)+
@@ -123,10 +130,11 @@ function pform(p){if(!chs.length)return alert('Create a chapter first.');
  <label>Edition<input name="edition" value="${esc(p.edition)}" placeholder="Boxy Fit"></label><label>Fabric / print<input name="fabric" value="${esc(p.fabric)}" placeholder="Screen Print"></label></div>
  <label>Description<textarea name="description">${esc(p.description)}</textarea></label><label>Photo<input name="file" type="file" accept="image/*"></label>
  <label>…or image link<input name="image" value="${p.image&&!p.image.startsWith('data:')?esc(p.image):''}" placeholder="https://"></label>${p.image?`<img src="${esc(p.image)}" style="height:70px;margin-top:8px;border-radius:4px">`:''}
+ <label>Colors this product comes in</label>${cols.length?`<div class="perms">${cols.map(c=>`<label class="ck"><input type="checkbox" name="col_${c.id}" ${(p.colors||[]).includes(c.id)?'checked':''}><span style="width:14px;height:14px;border-radius:50%;background:${esc(c.hex)};border:1px solid #fff4"></span> ${esc(c.name)}</label>`).join('')}</div><p class="mu" style="margin:6px 0 0">Leave all unticked to show no color choice for this product.</p>`:'<p class="mu" style="margin:6px 0 0">No colors yet. Add them in the Colors tab first.</p>'}
  <label class="ck"><input type="checkbox" name="visible" ${p.visible===false?'':'checked'}> Visible in the store</label><div class="act" style="margin-top:16px"><button class="btn">Save</button><button type="button" class="btn g" data-a="close">Cancel</button></div></form>`);
  $('#pf').onsubmit=async e=>{e.preventDefault();const E=e.target.elements,b=E[E.length-2];b.disabled=true;
   try{let img=E.image.value.trim()||p.image||'';if(E.file.files[0])img=await upImg(E.file.files[0]);
-   await(p.id?db.collection('products').doc(p.id):db.collection('products').doc()).set({title:E.title.value.trim(),arabicTitle:E.arabicTitle.value.trim(),category:E.category.value,price:+E.price.value,edition:E.edition.value.trim(),fabric:E.fabric.value.trim(),description:E.description.value.trim(),image:img,visible:E.visible.checked,updatedAt:FV.serverTimestamp(),updatedBy:me.username},{merge:true});
+   await(p.id?db.collection('products').doc(p.id):db.collection('products').doc()).set({title:E.title.value.trim(),arabicTitle:E.arabicTitle.value.trim(),category:E.category.value,price:+E.price.value,edition:E.edition.value.trim(),fabric:E.fabric.value.trim(),description:E.description.value.trim(),image:img,colors:cols.filter(c=>E['col_'+c.id]&&E['col_'+c.id].checked).map(c=>c.id),visible:E.visible.checked,updatedAt:FV.serverTimestamp(),updatedBy:me.username},{merge:true});
    closeM();toast('Product saved')}catch(x){fail(x);b.disabled=false}}}
 function cform(c){modal(`<h3>${c.id?'Edit':'New'} chapter</h3><form id="cf"><div class="g2"><label>Name (English)<input name="name" required value="${esc(c.name)}"></label><label>Arabic name<input name="arabic" dir="rtl" value="${esc(c.arabic)}"></label>
  <label>Banner Arabic (styled)<input name="bannerArabic" dir="rtl" value="${esc(c.bannerArabic)}"></label><label>Order<input name="order" type="number" value="${c.order??chs.length+1}"></label></div>
@@ -135,6 +143,14 @@ function cform(c){modal(`<h3>${c.id?'Edit':'New'} chapter</h3><form id="cf"><div
  <div class="act" style="margin-top:16px"><button class="btn">Save</button><button type="button" class="btn g" data-a="close">Cancel</button></div></form>`);
  $('#cf').onsubmit=async e=>{e.preventDefault();const E=e.target.elements;try{const id=c.id||slug(E.name.value);if(!id)throw Error('Please enter a name using letters or numbers');if(!c.id&&chs.some(x=>x.id===id))throw Error('A chapter with this name already exists');
   await db.collection('chapters').doc(id).set({name:E.name.value.trim(),arabic:E.arabic.value.trim(),bannerArabic:E.bannerArabic.value.trim(),order:+E.order.value||0,type:E.type.value,tag:E.tag.value.trim(),title:E.title.value.trim(),story:E.story.value.trim()},{merge:true});closeM();toast('Chapter saved')}catch(x){fail(x)}}}
+function colform(c){modal(`<h3>${c.id?'Edit':'New'} color</h3><form id="kf"><label>Name<input name="name" required value="${esc(c.name)}" placeholder="Desert Sand"></label>
+ <div class="g2"><label>Shirt color<input name="hex" type="color" value="${esc(c.hex||'#141416')}" style="height:42px;padding:3px"></label><label>Print ink on this shirt<input name="ink" type="color" value="${esc(c.ink||'#C5A880')}" style="height:42px;padding:3px"></label></div>
+ <label class="ck"><input type="checkbox" name="studioTee" ${c.studioTee===false?'':'checked'}> Available in the bespoke studio for the <b>tee</b></label>
+ <label class="ck"><input type="checkbox" name="studioHoodie" ${c.studioHoodie===false?'':'checked'}> Available in the bespoke studio for the <b>hoodie</b></label>
+ <label>Order<input name="order" type="number" value="${c.order??cols.length+1}"></label>
+ <div class="act" style="margin-top:16px"><button class="btn">Save</button><button type="button" class="btn g" data-a="close">Cancel</button></div></form>`);
+ $('#kf').onsubmit=async e=>{e.preventDefault();const E=e.target.elements;try{const id=c.id||slug(E.name.value);if(!id)throw Error('Please enter a name');if(!c.id&&cols.some(x=>x.id===id))throw Error('A color with this name already exists');
+  await db.collection('colors').doc(id).set({name:E.name.value.trim(),hex:E.hex.value,ink:E.ink.value,studioTee:E.studioTee.checked,studioHoodie:E.studioHoodie.checked,order:+E.order.value||0},{merge:true});closeM();toast('Color saved')}catch(x){fail(x)}}}
 const UN='pattern="[A-Za-z0-9._-]{3,}" title="Letters, numbers . _ - (3+ characters)"';
 const taken=async n=>(await db.collection('logins').doc(n).get()).exists;
 async function mkAcct(name,pw){const app2=firebase.initializeApp(CFG,'s'+Date.now());
@@ -146,7 +162,7 @@ function setupForm(){modal(`<h3>Create the first owner</h3><form id="su"><p clas
  $('#su').onsubmit=async e=>{e.preventDefault();const E=e.target.elements,name=uname(E.u.value);let cr;
   try{const email=name+'.'+Math.random().toString(36).slice(2,8)+'@fekra.team';cr=await auth.createUserWithEmailAndPassword(email,E.p.value);
    const b=db.batch();b.set(db.collection('meta').doc('setup'),{code:E.c.value.trim(),at:FV.serverTimestamp()});
-   b.set(db.collection('users').doc(cr.user.uid),{username:name,role:'owner',perms:[],active:true});b.set(db.collection('logins').doc(name),{email,uid:cr.user.uid});
+   b.set(db.collection('users').doc(cr.user.uid),{username:name,role:'owner',perms:[],active:true});b.set(db.collection('logins').doc(name),{email,uid:cr.user.uid});b.set(db.collection('meta').doc('status'),{done:true});
    await b.commit();location.reload()}
   catch(x){if(cr)await cr.user.delete().catch(()=>{});alert(x.code==='permission-denied'?'Wrong setup code, or the first owner already exists.':x.message)}}}
 function sform(){modal(`<h3>New team member</h3><form id="nf"><label>Username (letters/numbers, no spaces)<input name="u" required ${UN} autocomplete="off"></label><label>Password (min 6 characters)<input name="p" type="text" minlength="6" required autocomplete="off"></label>
@@ -167,10 +183,18 @@ function eform(id){const u=stf.find(x=>x.id===id);if(!u)return;
    if(name!==u.username)b.delete(db.collection('logins').doc(u.username));b.set(db.collection('logins').doc(name),{email:a.email,uid:a.uid});
    await b.commit();closeM();if(id===me.id){auth.signOut();alert('Login changed. Please log in again.')}else toast('Login updated')}catch(x){fail(x)}}}
 
+async function sweep(){const cut=firebase.firestore.Timestamp.fromMillis(Date.now()-30*864e5);let n=0;
+ for(;;){const q=await db.collection('orders').where('createdAt','<',cut).limit(400).get();if(q.empty)break;const b=db.batch();q.docs.forEach(d=>b.delete(d.ref));await b.commit();n+=q.size;if(q.size<400)break}return n}
+
 // ---------- clicks ----------
 const acts={tab:(id)=>go(id),close:closeM,out:()=>auth.signOut(),
  pw:()=>{const p=prompt('New password (min 6 characters)');if(p)auth.currentUser.updatePassword(p).then(()=>toast('Password changed')).catch(e=>alert(e.code==='auth/requires-recent-login'?'For safety, log out, log in again, then retry.':e.message))},
+ coledit:id=>colform(cols.find(c=>c.id===id)||{}),
  pedit:id=>pform(prs.find(p=>p.id===id)||{}),cedit:id=>cform(chs.find(c=>c.id===id)||{}),snew:sform,elogin:eform,setup:setupForm,
+ coldel:id=>confirm('Delete this color? Products that used it simply stop showing it.')&&db.collection('colors').doc(id).delete().then(()=>toast('Deleted')).catch(fail),
+ colseed:()=>{const b=db.batch();[['Obsidian Black','#141416','#C5A880'],['Studio White','#F4F1EA','#141416'],['Washed Charcoal','#2B2C30','#C5A880'],['Desert Sand','#CFC2AE','#141416']].forEach((c,i)=>b.set(db.collection('colors').doc(slug(c[0])),{name:c[0],hex:c[1],ink:c[2],studioTee:true,studioHoodie:true,order:i+1}));b.commit().then(()=>toast('Colors added')).catch(fail)},
+ odel:id=>confirm('Delete this order? Make sure it is saved in your Google Sheet first.')&&db.collection('orders').doc(id).delete().then(()=>toast('Order deleted')).catch(fail),
+ osweep:()=>confirm('Delete every order older than 30 days?')&&sweep().then(n=>toast(n?n+' old orders deleted':'No orders older than 30 days')).catch(fail),
  pdel:id=>confirm('Delete this product for good?')&&db.collection('products').doc(id).delete().then(()=>toast('Deleted')).catch(fail),
  cdel:async id=>{try{if(!(await db.collection('products').where('category','==',id).limit(1).get()).empty)return alert('This chapter still has products. Move or delete them first.');
   if(confirm('Delete this chapter?'))await db.collection('chapters').doc(id).delete()}catch(x){fail(x)}},

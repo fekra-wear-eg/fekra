@@ -236,7 +236,7 @@
     <section id="origin" class="py-24 md:py-36 px-6 md:px-12 border-t border-white/5 editorial-grain">
         <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
             <!-- Left Authentic Founder Narrative -->
-            <div class="lg:col-span-6 reveal">
+            <div class="lg:col-span-8 lg:col-start-3 reveal">
                 <div class="flex items-center space-x-4 mb-6">
                     <span class="h-[1px] w-12 bg-champagne"></span>
                     <span class="text-xs uppercase tracking-editorial text-champagne">How It Started &bull; The Spark</span>
@@ -275,29 +275,6 @@
                         <span class="font-serif text-2xl md:text-3xl text-champagne block">1 of 1</span>
                         <span class="text-xs uppercase tracking-widest text-alabaster mt-1 block">Co-Creation</span>
                         <span class="text-xs text-stone mt-1 block">Made with you</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Right Editorial Image Composition -->
-            <div class="lg:col-span-6 reveal">
-                <div class="relative">
-                    <div class="overflow-hidden rounded-sm bg-charcoal aspect-[4/5] border border-white/10">
-                        <img 
-                            src="https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=1200&q=85" 
-                            onerror="this.onerror=null;this.src='https://placehold.co/800x1000/131316/C5A880?text=FEKRA+ORIGIN';"
-                            alt="Black FEKRA tee" 
-                            class="w-full h-full object-cover hover:scale-105 transition-transform duration-1000"
-                        />
-                    </div>
-                    <!-- Floating Editorial Quote Plaque -->
-                    <div class="hidden sm:block absolute -bottom-8 -left-8 bg-charcoal/95 backdrop-blur-md border border-champagne/35 p-7 max-w-sm rounded-sm shadow-2xl">
-                        <p class="font-serif italic text-lg text-alabaster leading-snug">
-                            “Every design in our archive started with a real moment—a bored sketch in class, a song at midnight, a date on a sleeve.”
-                        </p>
-                        <p class="text-[11px] uppercase tracking-editorial text-champagne mt-3">
-                            — The Founders, FEKRA
-                        </p>
                     </div>
                 </div>
             </div>
@@ -957,6 +934,14 @@
 
                     <p id="modal-desc" class="text-sm text-stone font-light leading-relaxed mb-5"></p>
 
+                    <!-- Color picker (shown only when the product has colors set in the admin) -->
+                    <div id="modal-single-color-box" class="hidden border-t border-white/10 pt-5 mb-6">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs uppercase tracking-widest text-champagne">Select Color</span>
+                            <span id="modal-color-label" class="text-[11px] text-champagne"></span>
+                        </div>
+                        <div class="flex flex-wrap gap-2" id="modal-colors"></div>
+                    </div>
                     <!-- Single Size Selector (Standard Chapters: Rasma, 8any, E7sasy) -->
                     <div id="modal-single-size-box" class="border-t border-white/10 pt-5 mb-6">
                         <div class="flex items-center justify-between mb-3">
@@ -1253,6 +1238,7 @@
             ? (firebase.initializeApp(FEKRA_FIREBASE), firebase.firestore()) : null;
         let chapters = [];
         let products = [];
+        let palette = [];   // color library from the admin: { id, name, hex, ink, studioTee, studioHoodie }
         let collectionStories = {
             all: {
                 tag: 'Complete Archive • All Chapters',
@@ -1297,10 +1283,11 @@
             if (!fekraDb) { grid.innerHTML = '<p class="text-stone text-sm col-span-full">The catalog is not connected yet.</p>'; return; }
             grid.innerHTML = '<p class="text-stone text-sm col-span-full">Loading the archive…</p>';
             try {
-                const [cs, ps, ss] = await Promise.all([
+                const [cs, ps, ss, cls] = await Promise.all([
                     fekraDb.collection('chapters').get(),
                     fekraDb.collection('products').get(),
-                    fekraDb.collection('settings').doc('store').get()
+                    fekraDb.collection('settings').doc('store').get(),
+                    fekraDb.collection('colors').get().catch(() => ({ docs: [] }))
                 ]);
                 const s = ss.exists ? ss.data() : {};
                 const oldWa = FEKRA_CONFIG.WHATSAPP_DISPLAY, oldIg = FEKRA_CONFIG.INSTAGRAM;
@@ -1320,7 +1307,9 @@
                     p.categoryLabel = `${ch.name} • ${ch.arabic || ''}` + (ch.type === 'pair' ? ' (Pair of 2 Tees)' : '');
                     p.price = Number(p.price) || 0;
                 });
+                palette = cls.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.order || 0) - (b.order || 0));
                 buildChapterNav();
+                buildStudioColors();
                 setActiveFilter('all');
                 updateCartUI();
                 if (!products.length) grid.innerHTML = '<p class="text-stone text-sm col-span-full">New pieces are coming soon.</p>';
@@ -1506,6 +1495,45 @@
             if (dateBadge) dateBadge.textContent = dateVal ? `Sleeve: ${dateVal}` : 'No Sleeve Date';
         }
 
+        // ---- Colors per product (set in the admin) ----
+        let selectedProductColor = null;
+        let duoList = [];
+        const productColors = (p) => (p.colors || []).map(id => palette.find(c => c.id === id)).filter(Boolean);
+        const COLOR_BTN_ON = 'border border-champagne bg-champagne/10';
+        const COLOR_BTN_OFF = 'border border-white/15';
+        function renderSingleColors(list) {
+            const box = document.getElementById('modal-colors');
+            selectedProductColor = list[0];
+            const paint = () => {
+                box.querySelectorAll('button').forEach(b => { b.className = `flex items-center gap-2 px-3 py-2 rounded-sm text-xs text-alabaster ${b.dataset.id === selectedProductColor.id ? COLOR_BTN_ON : COLOR_BTN_OFF}`; });
+                document.getElementById('modal-color-label').textContent = selectedProductColor.name;
+            };
+            box.innerHTML = list.map(c => `<button type="button" data-id="${c.id}"><span class="w-4 h-4 rounded-full border border-white/30" style="background:${c.hex}"></span>${escH(c.name)}</button>`).join('');
+            box.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { selectedProductColor = list.find(c => c.id === b.dataset.id); paint(); }));
+            paint();
+        }
+        function buildDuoColors(list) {
+            duoList = list;
+            const pick = (n) => (n === 1 ? list[0] : (list[1] || list[0]));
+            const paint = (n) => {
+                const sel = n === 1 ? selectedColor1 : selectedColor2;
+                document.querySelectorAll('.duo-color-btn-' + n).forEach(b => { b.className = `duo-color-btn-${n} flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-sm text-[10px] text-alabaster ${b.dataset.color === sel.name ? COLOR_BTN_ON : COLOR_BTN_OFF}`; });
+            };
+            [1, 2].forEach(n => {
+                const c = pick(n), obj = { name: c.name, hex: c.hex, ink: c.ink };
+                if (n === 1) selectedColor1 = obj; else selectedColor2 = obj;
+                const box = document.getElementById('modal-colors-' + n);
+                box.innerHTML = list.map(x => `<button type="button" data-color="${escH(x.name)}" data-hex="${x.hex}" data-ink="${x.ink}" class="duo-color-btn-${n}"><span class="w-3 h-3 rounded-full border border-white/30" style="background:${x.hex}"></span><span>${escH(x.name)}</span></button>`).join('');
+                box.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+                    const o = { name: b.dataset.color, hex: b.dataset.hex, ink: b.dataset.ink };
+                    if (n === 1) selectedColor1 = o; else selectedColor2 = o;
+                    paint(n); update7obyDuoPreview();
+                }));
+                paint(n);
+            });
+            update7obyDuoPreview();
+        }
+
         function openQuickView(product) {
             activeProduct = product;
             selectedSize = 'M';
@@ -1588,6 +1616,21 @@
                 }
             });
 
+            // Colors: the product's own list (pairs fall back to the whole library)
+            const pcl = productColors(product);
+            const colorBox = document.getElementById('modal-single-color-box');
+            selectedProductColor = null;
+            if (isPairCat(product.category)) {
+                colorBox.classList.add('hidden');
+                const dl = pcl.length ? pcl : palette;
+                if (dl.length) buildDuoColors(dl);
+            } else if (pcl.length) {
+                renderSingleColors(pcl);
+                colorBox.classList.remove('hidden');
+            } else {
+                colorBox.classList.add('hidden');
+            }
+
             quickviewModal.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
         }
@@ -1667,7 +1710,7 @@
                     const duoSizeLabel = `His: ${selectedColor1.name} (${selectedSize1}) | Hers: ${selectedColor2.name} (${selectedSize2})`;
                     addToCart(activeProduct, duoSizeLabel, sleeveDate);
                 } else {
-                    addToCart(activeProduct, selectedSize, '');
+                    addToCart(activeProduct, selectedProductColor ? `${selectedSize} • ${selectedProductColor.name}` : selectedSize, '');
                 }
                 closeQuickView();
             }
@@ -1823,6 +1866,7 @@ async function saveOrderToDb(order) {
                 const doc = JSON.parse(JSON.stringify({ ...rest, fileCount: (files || []).length, status: 'new' }));
                 if (JSON.stringify(doc).length > 900000) doc.items.forEach(i => { delete i.design; });
                 doc.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                doc.expireAt = firebase.firestore.Timestamp.fromMillis(Date.now() + 30 * 24 * 60 * 60 * 1000); // auto-delete after 30 days
                 await fekraDb.collection('orders').doc(order.orderId).set(doc);
                 return true;
             } catch (e) { console.warn('Order DB save failed', e); return false; }
@@ -2526,26 +2570,41 @@ async function saveOrderToDb(order) {
             }
         }
 
-        // Garment Base Color Selector
-        document.querySelectorAll('.color-option').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.color-option').forEach(b => {
-                    b.classList.remove('active', 'border-champagne', 'bg-obsidian');
-                    b.classList.add('border-white/15', 'bg-obsidian/50');
-                });
-                btn.classList.add('active', 'border-champagne', 'bg-obsidian');
-                btn.classList.remove('border-white/15', 'bg-obsidian/50');
-
-                const colorHex = btn.dataset.color;
-                const colorName = btn.dataset.name;
-                studioState.shirtColor = colorHex;
-                if (previewColorLabel) previewColorLabel.textContent = colorName;
-
-                if (shirtMaterial) shirtMaterial.color.set(colorHex);
-                if (ribCollarMaterial) ribCollarMaterial.color.set(colorHex);
-                redraw3DPrintTextures();
+        // Garment Base Color Selector (the buttons are built from the color library, see buildStudioColors)
+        document.getElementById('color-selector').addEventListener('click', (e) => {
+            const btn = e.target.closest('.color-option');
+            if (!btn) return;
+            document.querySelectorAll('.color-option').forEach(b => {
+                b.classList.remove('active', 'border-champagne', 'bg-obsidian');
+                b.classList.add('border-white/15', 'bg-obsidian/50');
             });
+            btn.classList.add('active', 'border-champagne', 'bg-obsidian');
+            btn.classList.remove('border-white/15', 'bg-obsidian/50');
+
+            const colorHex = btn.dataset.color;
+            const colorName = btn.dataset.name;
+            studioState.shirtColor = colorHex;
+            if (previewColorLabel) previewColorLabel.textContent = colorName;
+
+            if (shirtMaterial) shirtMaterial.color.set(colorHex);
+            if (ribCollarMaterial) ribCollarMaterial.color.set(colorHex);
+            redraw3DPrintTextures();
         });
+
+        // Show only the colors you can produce for the selected garment (set in the admin, Colors tab)
+        function buildStudioColors() {
+            const box = document.getElementById('color-selector');
+            if (!box || !palette.length) return;   // no library yet: keep the built-in colors
+            const key = studioState.garment === 'hoodie' ? 'studioHoodie' : 'studioTee';
+            const list = palette.filter(c => c[key]);
+            const prev = box.querySelector('.color-option.active');
+            const prevHex = prev ? prev.dataset.color : null;
+            if (!list.length) { box.innerHTML = '<p class="text-xs text-stone col-span-full">No colors are available for this garment right now.</p>'; return; }
+            box.innerHTML = list.map(c => `<button type="button" data-color="${c.hex}" data-stroke="${c.ink}" data-text="${c.ink}" data-name="${escH(c.name)}" class="color-option flex items-center space-x-2.5 p-3 rounded-sm border border-white/15 bg-obsidian/50 text-xs text-alabaster"><span class="w-4 h-4 rounded-full border border-white/30" style="background:${c.hex}"></span><span>${escH(c.name)}</span></button>`).join('');
+            const pick = [...box.querySelectorAll('.color-option')].find(x => x.dataset.color === prevHex) || box.querySelector('.color-option');
+            try { pick.click(); } catch (err) { console.warn(err); }
+        }
+        ['garment-tee-btn', 'garment-hoodie-btn'].forEach(id => document.getElementById(id)?.addEventListener('click', () => setTimeout(buildStudioColors, 0)));
 
         // Print Zone Checkboxes (Front & Back)
         const frontCheckEl = document.getElementById('zone-front-check');
@@ -2875,6 +2934,7 @@ async function saveOrderToDb(order) {
         }
 
         function submitCustomDesign() {
+            if (palette.length && !document.querySelector('.color-option.active')) { showToast('No colors are available for this garment yet.'); return; }
             const activeColorName = document.querySelector('.color-option.active')?.dataset.name || 'Obsidian Black';
             const name = document.getElementById('bespoke-name').value.trim();
             const zones = [
