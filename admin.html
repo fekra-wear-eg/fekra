@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>FEKRA Admin</title>
+<style>
+:root{--bg:#0e0e10;--card:#17171a;--line:#2a2a2f;--tx:#ece8df;--mu:#8d8a84;--gold:#C5A880;--red:#e0786e;--grn:#7fc08a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.5 system-ui,Segoe UI,Tahoma,sans-serif}
+[hidden]{display:none!important}h2,h3{font-weight:500;margin:0}a{color:var(--gold)}small,.mu{color:var(--mu)}
+input,select,textarea,button{font:inherit;color:inherit}
+input,select,textarea{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:9px 11px;margin-top:4px}
+input:focus,select:focus,textarea:focus{outline:0;border-color:var(--gold)}textarea{min-height:90px;resize:vertical}
+label{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mu);margin-top:12px}
+label.ck{display:flex;gap:8px;align-items:center;text-transform:none;letter-spacing:0;font-size:14px;color:var(--tx)}label.ck input{width:auto;margin:0}
+.btn{background:var(--gold);color:#141416;border:0;border-radius:4px;padding:9px 16px;cursor:pointer;font-weight:600}
+.btn.g{background:none;border:1px solid var(--line);color:var(--tx);font-weight:400}.btn.r{background:none;border:1px solid #5a2f2b;color:var(--red);font-weight:400}
+.btn.s{padding:5px 10px;font-size:12px}.btn:disabled{opacity:.5}
+#login{min-height:100vh;display:grid;place-items:center;padding:20px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:28px;width:100%;max-width:380px}
+.brand{font:500 24px Georgia,serif;color:var(--gold);letter-spacing:.2em}.err{color:var(--red);min-height:20px;margin:10px 0 0;word-break:break-all}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5}
+#tabs{display:flex;gap:4px;flex:1;flex-wrap:wrap}#tabs button{background:none;border:0;padding:8px 14px;cursor:pointer;color:var(--mu);border-radius:4px}#tabs button.on{background:var(--card);color:var(--gold)}
+main{max-width:1000px;margin:0 auto;padding:20px}.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}.bar h2{flex:1}.bar input,.bar select{width:auto;margin:0;min-width:160px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-bottom:12px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:8px}.row select{width:auto;margin:0;padding:5px 8px}.row .mu{flex:1}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}.grid .card{margin:0}
+.pr{display:flex;gap:12px}.pr img{width:70px;height:90px;object-fit:cover;border-radius:4px;background:var(--bg)}.act{display:flex;gap:8px;margin-top:8px}
+.tag{font-size:11px;padding:2px 8px;border-radius:10px;border:1px solid var(--line);text-transform:uppercase;letter-spacing:.06em}
+.tag.new{color:var(--gold);border-color:var(--gold)}.tag.delivered,.tag.confirmed{color:var(--grn)}.tag.cancelled{color:var(--red)}
+.perms{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+#m{position:fixed;inset:0;background:#000b;display:grid;place-items:start center;overflow:auto;padding:30px 14px;z-index:10}.mb{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:22px;width:100%;max-width:540px}
+#toast{position:fixed;bottom:20px;right:20px;background:var(--gold);color:#141416;padding:10px 16px;border-radius:4px;z-index:20}
+.studio{display:grid;grid-template-columns:430px 1fr;gap:16px;align-items:start}.studio .sec{margin-bottom:14px}.studio h3{font-size:15px;margin-bottom:8px;color:var(--gold)}
+.studio #stfr{position:sticky;top:66px;width:100%;height:calc(100vh - 90px);border:1px solid var(--line);border-radius:8px;background:#000}.chip{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:14px;padding:3px 6px 3px 12px;margin:0 6px 6px 0}.chip a{cursor:pointer;color:var(--red);padding:0 4px}
+@media(max-width:1100px){.studio{grid-template-columns:1fr}.studio #stfr{position:static;height:80vh}}
+@media(max-width:640px){.g2,.perms{grid-template-columns:1fr}}
+</style></head><body>
+
+<div id="login"><form class="box" id="lf" autocomplete="on">
+<div class="brand">FEKRA</div><p class="mu" style="margin:4px 0 14px">Team dashboard</p>
+<label>Username<input id="u" autocomplete="username" required></label>
+<label>Password<input id="p" type="password" autocomplete="current-password" required></label>
+<p class="err" id="le"></p><button class="btn" style="width:100%;margin-top:8px">Log in</button>
+<p style="text-align:center;margin:16px 0 0"><a href="#" id="setuplink" hidden data-a="setup" class="mu">First time? Create the first owner</a></p></form></div>
+
+<div id="app" hidden>
+<header><span class="brand" style="font-size:18px">FEKRA</span><div id="tabs"></div><small id="who"></small>
+<button class="btn g s" data-a="pw">Password</button><button class="btn g s" data-a="out">Log out</button></header>
+<main id="main"></main></div>
+<div id="m" hidden><div class="mb" id="mb"></div></div><div id="toast" hidden></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// ===== PASTE YOUR FIREBASE SETTINGS HERE (same ones as in index.html) =====
+const CFG={apiKey:"AIzaSyDzk4FJjx9unOjFPoxiNrbYSyz-lKw6nRw",authDomain:"fekra-1026.firebaseapp.com",projectId:"fekra-1026",appId:"1:854905097799:web:4eba9cde50733c9b76ab62"};
+// ==========================================================================
+firebase.initializeApp(CFG);
+const auth=firebase.auth(),db=firebase.firestore(),FV=firebase.firestore.FieldValue,$=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uname=u=>u.trim().toLowerCase().replace(/\s+/g,'');
+const slug=s=>s.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+const wa=n=>{let d=String(n||'').replace(/\D/g,'');return d.startsWith('00')?d.slice(2):d.startsWith('0')?'20'+d.slice(1):d};
+const PERMS={products:'Edit products',chapters:'Edit chapters',colors:'Edit studio colors',garments:'Edit Bespoke Studio (3D models, size charts, fonts, options)',content:'Edit website text',orders_view:'See orders',orders_edit:'Update orders',orders_delete:'Delete orders'};
+const STAT=['new','confirmed','printing','shipped','delivered','cancelled'];
+let me,tab,so=null,lastSig='',chs=[],cols=[],grs=[],prs=[],ors=[],stf=[],cfg={},unsub=[],of='all',oq='';
+const can=p=>me&&(me.role==='owner'||(me.perms||[]).includes(p));
+const toast=m=>{const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,2800)};
+const fail=e=>{console.error(e);toast(e.code==='permission-denied'?'You do not have permission for that.':'Error: '+e.message)};
+const modal=h=>{$('#mb').style.maxWidth='';$('#mb').innerHTML=h;$('#m').hidden=false},closeM=()=>$('#m').hidden=true;
+$('#m').onclick=e=>{if(e.target.id==='m')closeM()};
+
+// ---------- login ----------
+db.collection('meta').doc('status').get().then(d=>{if(!d.exists)$('#setuplink').hidden=false}).catch(()=>{});
+$('#lf').onsubmit=async e=>{e.preventDefault();$('#le').textContent='';
+ try{const d=await db.collection('logins').doc(uname($('#u').value)).get();if(!d.exists)throw 0;await auth.signInWithEmailAndPassword(d.data().email,$('#p').value)}catch(x){$('#le').textContent='Wrong username or password.'}};
+auth.onAuthStateChanged(async u=>{unsub.forEach(f=>f());unsub=[];me=null;$('#app').hidden=true;$('#login').hidden=false;if(!u)return;
+ try{const s=await db.collection('users').doc(u.uid).get();
+  if(!s.exists||s.data().active===false){$('#le').innerHTML='No access yet. Ask an owner to enable your account.<br><small>ID: '+u.uid+'</small>';return}
+  me={id:u.uid,...s.data()};start()}catch(x){$('#le').textContent='Could not load your profile: '+x.message}});
+
+function start(){$('#login').hidden=true;$('#app').hidden=false;$('#who').textContent=me.username+' · '+me.role;
+ const sub=(q,fn)=>unsub.push(q.onSnapshot(fn,fail)),L=s=>s.docs.map(d=>({id:d.id,...d.data()}));
+ sub(db.collection('chapters'),s=>{chs=L(s).sort((a,b)=>(a.order||0)-(b.order||0));draw('chapters','products')});
+ sub(db.collection('colors'),s=>{cols=L(s).sort((a,b)=>(a.order||0)-(b.order||0));draw('colors')});
+ if(can('garments'))sub(db.collection('garments'),s=>{grs=L(s).sort((a,b)=>(a.order||0)-(b.order||0));drawStudio();draw('colors')});
+ if(can('garments'))unsub.push(db.collection('studio').doc('options').onSnapshot(d=>{so=d.exists?d.data():null;drawStudio()},fail));
+ if(can('products'))sub(db.collection('products'),s=>{prs=L(s).sort((a,b)=>(a.title||'').localeCompare(b.title||''));draw('products')});
+ if(can('orders_view')||can('orders_edit'))sub(db.collection('orders').orderBy('createdAt','desc').limit(300),s=>{ors=L(s);draw('orders')});
+ if(me.role==='owner')sub(db.collection('users'),s=>{stf=L(s);draw('staff')});
+ db.collection('settings').doc('store').get().then(d=>{cfg=d.data()||{};draw('settings')}).catch(()=>{});
+ if(can('orders_delete'))sweep().then(n=>n&&toast(n+' orders older than 30 days were cleaned up')).catch(()=>{});
+ if(me.role==='owner')db.collection('meta').doc('status').set({done:true},{merge:true}).catch(()=>{});
+ const t=[];if(can('orders_view')||can('orders_edit'))t.push(['orders','Orders']);if(can('products'))t.push(['products','Products']);
+ if(can('chapters'))t.push(['chapters','Chapters']);if(can('colors'))t.push(['colors','Studio colors']);if(can('garments'))t.push(['studio','Bespoke Studio']);if(can('content'))t.push(['site','Website text']);if(me.role==='owner')t.push(['staff','Team'],['settings','Settings']);
+ $('#tabs').innerHTML=t.map(x=>`<button data-a="tab" data-id="${x[0]}">${x[1]}</button>`).join('');
+ t.length?go(t[0][0]):$('#main').innerHTML='<p class="mu">Your account has no permissions yet. Ask an owner.</p>'}
+const go=t=>{tab=t;$('#main').style.maxWidth=t==='studio'?'1700px':'';document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.id===t));render()};
+const render=()=>{if(views[tab])$('#main').innerHTML=views[tab]()},draw=(...n)=>{if(n.includes(tab))render()};
+
+// ---------- images ----------
+const shrink=(f,max=900)=>new Promise((ok,no)=>{const i=new Image();i.onload=()=>{const r=Math.min(1,max/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*r;c.height=i.height*r;c.getContext('2d').drawImage(i,0,0,c.width,c.height);ok(c)};i.onerror=()=>no(Error('Not a valid image'));i.src=URL.createObjectURL(f)});
+async function upImg(f){const c=await shrink(f);
+ if(cfg.cloudName&&cfg.uploadPreset){const b=await new Promise(r=>c.toBlob(r,'image/jpeg',.85)),fd=new FormData();fd.append('file',b);fd.append('upload_preset',cfg.uploadPreset);
+  const j=await(await fetch(`https://api.cloudinary.com/v1_1/${cfg.cloudName}/image/upload`,{method:'POST',body:fd})).json();if(!j.secure_url)throw Error('Image upload failed');return j.secure_url}
+ let q=.85,d=c.toDataURL('image/jpeg',q);while(d.length>700000&&q>.3){q-=.1;d=c.toDataURL('image/jpeg',q)}return d}
+
+// ---------- views ----------
+const views={};
+views.orders=()=>{const l=ors.filter(o=>(of==='all'||o.status===of)&&(!oq||JSON.stringify([o.orderId,o.customer]).toLowerCase().includes(oq)));
+ return `<div class="bar"><h2>Orders <small>${l.length}</small></h2><input data-ch="oq" placeholder="Search name, phone, order ID" value="${esc(oq)}"><select data-ch="of"><option value="all">All statuses</option>${STAT.map(s=>`<option ${s===of?'selected':''}>${s}</option>`).join('')}</select>${can('orders_delete')?'<button class="btn g s" data-a="osweep">Delete orders older than 30 days</button>':''}</div>`+
+ (l.map(o=>{const c=o.customer||{},d=o.createdAt&&o.createdAt.toDate?o.createdAt.toDate().toLocaleString():'';
+ return `<div class="card"><div class="row"><b>${esc(o.orderId)}</b><span class="mu">${d}</span><span class="tag ${o.status}">${esc(o.status)}</span>${can('orders_edit')?`<select data-ch="st" data-id="${esc(o.orderId)}">${STAT.map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}</select>`:''}${can('orders_delete')?`<button class="btn r s" data-a="odel" data-id="${esc(o.orderId)}">Delete</button>`:''}</div>
+ <div class="g2"><div><b>${esc(c.name)}</b><br><a target="_blank" href="https://wa.me/${wa(c.whatsapp)}?text=${encodeURIComponent('Hi '+(c.name||'')+', this is FEKRA about your order '+o.orderId)}">${esc(c.whatsapp)}</a><br>${esc(c.governorate)} — ${esc(c.address)}${c.notes?'<br><i>'+esc(c.notes)+'</i>':''}</div>
+ <div>${(o.items||[]).map(i=>`${i.qty}× ${esc(i.title)} — ${esc(i.size)}${i.sleeveDate?' · sleeve '+esc(i.sleeveDate):''}${i.design?` <span class="tag">custom ${esc(i.design.garment)}</span>`:''}`).join('<br>')}<br><b>EGP ${o.total}</b> · ${esc(o.paymentLabel||o.payment)}</div></div>
+ ${o.fileCount?'<p class="mu" style="margin:8px 0 0">Custom design files: see the Google Sheet / Drive backup.</p>':''}</div>`}).join('')||'<p class="mu">No orders.</p>')};
+views.products=()=>`<div class="bar"><h2>Products <small>${prs.length}</small></h2><button class="btn" data-a="pedit">+ Add product</button></div>`+
+ (prs.length?`<div class="grid">${prs.map(p=>`<div class="card pr"><img src="${esc(p.image)}" alt=""><div><b>${esc(p.title)}</b><div class="mu">${esc((chs.find(c=>c.id===p.category)||{}).name||'no chapter')} · EGP ${p.price}${p.visible===false?' · <span style="color:var(--red)">hidden</span>':''}</div><div class="act"><button class="btn g s" data-a="pedit" data-id="${p.id}">Edit</button><button class="btn r s" data-a="pdel" data-id="${p.id}">Delete</button></div></div></div>`).join('')}</div>`:'<p class="mu">No products yet.</p>');
+views.chapters=()=>`<div class="bar"><h2>Chapters <small>${chs.length}</small></h2><button class="btn" data-a="cedit">+ Add chapter</button></div>`+
+ chs.map(c=>`<div class="card" style="${c.archived?'opacity:.6':''}"><div class="row"><b>${esc(c.name)}</b><span>${esc(c.arabic)}</span>${c.archived?'<span class="tag cancelled">archived · hidden on website</span>':''}<span class="tag">${c.type==='pair'?'pair of 2':'single tee'}</span><span class="mu">order ${c.order||0}</span><button class="btn g s" data-a="carch" data-id="${c.id}">${c.archived?'Restore':'Archive'}</button><button class="btn g s" data-a="cedit" data-id="${c.id}">Edit</button><button class="btn r s" data-a="cdel" data-id="${c.id}">Delete</button></div><div class="mu">${esc(c.title)}</div></div>`).join('');
+views.colors=()=>`<div class="bar"><h2>Bespoke Studio colors <small>${cols.length}</small></h2><button class="btn" data-a="coledit">+ Add color</button></div>
+ <p class="mu">Black and White are always available in the studio. Add every other color you can produce for custom pieces here. Colors for a specific product are chosen inside that product (Products tab).</p>`+
+ (cols.length?cols.map(c=>`<div class="card"><div class="row"><span style="width:26px;height:26px;border-radius:50%;background:${esc(c.hex)};border:1px solid #fff4"></span><b>${esc(c.name)}</b><span class="mu">${esc(c.hex)}</span>${gList().map(g=>colorOk(c,g.id)?`<span class="tag">${esc(g.name)}</span>`:'').join('')}<button class="btn g s" data-a="coledit" data-id="${c.id}">Edit</button><button class="btn r s" data-a="coldel" data-id="${c.id}">Delete</button></div></div>`).join(''):'<p class="mu">No extra colors yet. Only Black and White are offered.</p>');
+views.site=()=>`<div class="bar"><h2>Website text</h2><div class="act" style="margin:0"><button class="btn g s" data-a="slang" data-id="en">English</button><button class="btn g s" data-a="slang" data-id="ar">العربية</button></div></div>
+ <div class="card row" style="position:sticky;top:64px;z-index:4;margin-bottom:10px"><span class="mu" id="sitesel">Click any text in the preview below to edit it right there. Switch English / العربية to edit each language.</span><button class="btn" id="ssave" data-a="ssave" disabled>Save Changes</button><button class="btn g s" data-a="sreset">Reset to original</button></div>
+ <iframe id="sitefr" src="index.html?fekra-edit=1" style="width:100%;height:72vh;border:1px solid var(--line);border-radius:8px;background:#000"></iframe>`;
+const DEF_CHART_COLS=[{en:'Size',ar:'المقاس'},{en:'Chest Width (cm)',ar:'عرض الصدر (سم)'},{en:'Body Length (cm)',ar:'طول الجسم (سم)'},{en:'Shoulder Width (cm)',ar:'عرض الكتف (سم)'},{en:'Sleeve Length (cm)',ar:'طول الكم (سم)'}];
+const DEF_GARMENTS=[
+ {id:'tee',order:1,name:'Boxy Tee',nameAr:'تيشيرت بوكسي',short:'Tee',price:160,builtin:'tee',visible:true,chartTab:'Boxy Cut T-Shirts',chartTabAr:'تيشيرتات بقصّة بوكسي',subtitle:'Cut in a dropped-shoulder boxy silhouette. Take your true size for a relaxed drape.',subtitleAr:'',chart:{cols:DEF_CHART_COLS,rows:[['XS','55 cm','65 cm','52 cm','21 cm'],['S','58 cm','67 cm','54 cm','22 cm'],['M','61 cm','69 cm','57 cm','23 cm'],['L','64 cm','71 cm','60 cm','24 cm'],['XL','67 cm','73 cm','62 cm','25 cm'],['XXL','70 cm','75 cm','64 cm','26 cm']]}},
+ {id:'hoodie',order:2,name:'Boxy Hoodie',nameAr:'هودي بوكسي',short:'Hoodie',price:300,builtin:'hoodie',visible:true,chartTab:'Boxy Fit Hoodies',chartTabAr:'هوديز بقصّة بوكسي',subtitle:'Boxy hoodie cut with wide dropped shoulders, a double-lined hood, and a rib hem.',subtitleAr:'',chart:{cols:DEF_CHART_COLS,rows:[['XS','60 cm','63 cm','58 cm','57 cm'],['S','63 cm','65 cm','60 cm','58 cm'],['M','66 cm','67 cm','63 cm','60 cm'],['L','69 cm','69 cm','66 cm','62 cm'],['XL','72 cm','71 cm','68 cm','63 cm'],['XXL','75 cm','73 cm','70 cm','64 cm']]}}];
+const gList=()=>grs.length?grs:DEF_GARMENTS;
+const colorOk=(c,id)=>Array.isArray(c.studioGarments)?c.studioGarments.includes(id):(id==='hoodie'?c.studioHoodie!==false:id==='tee'?c.studioTee!==false:false);
+views.garments=()=>`<div class="bar"><h2>Garments &amp; size charts <small>${grs.length}</small></h2><button class="btn" data-a="gedit">+ Add garment</button></div>
+ <p class="mu">Each garment has its own 3D model (.glb), studio price and size chart. Add a garment to get a new button in the 3D studio and a new tab in the size chart; delete one to remove it from both.</p>`+
+ (grs.length?grs.map(g=>`<div class="card"><div class="row"><b>${esc(g.name)}</b><span class="mu">EGP ${g.price||0} · ${g.builtin?'built-in 3D model':g.url?'3D model from link':'uploaded 3D model'} · ${((g.chart||{}).rows||[]).length} sizes</span>${g.visible===false?'<span class="tag cancelled">hidden</span>':''}<span class="mu">order ${g.order||0}</span><button class="btn g s" data-a="gedit" data-id="${esc(g.id)}">Edit</button><button class="btn r s" data-a="gdel" data-id="${esc(g.id)}">Delete</button></div></div>`).join('')
+ :`<div class="card"><p style="margin-top:0">Nothing saved yet. The website is currently showing the built-in <b>Boxy Tee</b> and <b>Boxy Hoodie</b>.</p><button class="btn" data-a="gseed">Import them so I can edit them</button></div>`);
+const DEF_FONTS=[{"key": "cormorant", "label": "Editorial Serif", "family": "Cormorant Garamond", "fb": "serif", "weight": 500, "size": 44, "italic": true}, {"key": "playfair", "label": "Display Serif", "family": "Playfair Display", "fb": "serif", "weight": 600, "size": 38, "italic": false}, {"key": "jakarta", "label": "Modern Minimal Sans", "family": "Plus Jakarta Sans", "fb": "sans-serif", "weight": 500, "size": 32, "italic": false}, {"key": "amiri", "label": "Classical Arabic", "family": "Amiri", "fb": "serif", "weight": 700, "size": 48, "italic": false}, {"key": "cairo", "label": "Geometric Arabic", "family": "Cairo", "fb": "sans-serif", "weight": 700, "size": 38, "italic": false}, {"key": "kufi", "label": "Geometric Kufi", "family": "Reem Kufi", "fb": "sans-serif", "weight": 600, "size": 40, "italic": false}, {"key": "tajawal", "label": "Clean Contemporary Arabic", "family": "Tajawal", "fb": "sans-serif", "weight": 700, "size": 38, "italic": false}, {"key": "bebas", "label": "Bold Condensed", "family": "Bebas Neue", "fb": "sans-serif", "weight": 400, "size": 54, "italic": false}, {"key": "anton", "label": "Poster Bold", "family": "Anton", "fb": "sans-serif", "weight": 400, "size": 44, "italic": false}, {"key": "oswald", "label": "Street Sans", "family": "Oswald", "fb": "sans-serif", "weight": 600, "size": 42, "italic": false}, {"key": "marker", "label": "Hand Marker", "family": "Permanent Marker", "fb": "cursive", "weight": 400, "size": 40, "italic": false}, {"key": "pacifico", "label": "Retro Script", "family": "Pacifico", "fb": "cursive", "weight": 400, "size": 40, "italic": false}, {"key": "typewriter", "label": "Typewriter", "family": "Special Elite", "fb": "serif", "weight": 400, "size": 34, "italic": false}, {"key": "lalezar", "label": "Bold Arabic Display", "family": "Lalezar", "fb": "sans-serif", "weight": 400, "size": 50, "italic": false}, {"key": "aref", "label": "Arabic Ruqaa", "family": "Aref Ruqaa", "fb": "serif", "weight": 700, "size": 48, "italic": false}, {"key": "messiri", "label": "Arabic Stylish", "family": "El Messiri", "fb": "sans-serif", "weight": 700, "size": 42, "italic": false}, {"key": "rakkas", "label": "Arabic Rounded Display", "family": "Rakkas", "fb": "cursive", "weight": 400, "size": 44, "italic": false}, {"key": "changa", "label": "Arabic Sporty", "family": "Changa", "fb": "sans-serif", "weight": 700, "size": 40, "italic": false}, {"key": "marhey", "label": "Arabic Playful", "family": "Marhey", "fb": "cursive", "weight": 700, "size": 40, "italic": false}, {"key": "almarai", "label": "Arabic Clean Bold", "family": "Almarai", "fb": "sans-serif", "weight": 800, "size": 38, "italic": false}, {"key": "katibeh", "label": "Arabic Calligraphy", "family": "Katibeh", "fb": "serif", "weight": 400, "size": 54, "italic": false}];
+const DEF_SIZES=['XS','S','M','L','XL','XXL'];
+const DEF_INKS=[{name:'Champagne Gold Ink',hex:'#C5A880'},{name:'Alabaster White Ink',hex:'#F4F1EA'},{name:'Obsidian Matte Black Ink',hex:'#111113'},{name:'Crimson Ink',hex:'#9E2A2B'}];
+const opt=()=>{const o=so||{};return{fonts:o.fonts||DEF_FONTS,sizes:o.sizes||DEF_SIZES,inks:o.inks||DEF_INKS,features:{back:true,draw:true,photo:true,...(o.features||{})},custom:{fonts:!!o.fonts,sizes:!!o.sizes,inks:!!o.inks}}};
+const saveOpt=patch=>db.collection('studio').doc('options').set(patch,{merge:true}).then(()=>toast('Saved')).catch(fail);
+const stPanel=()=>{const o=opt();return `
+ <div class="card sec"><div class="row"><h3 style="flex:1;margin:0">3D models, prices &amp; size charts</h3><button class="btn s" data-a="gedit">+ Add garment</button></div>
+ <p class="mu" style="margin:0 0 10px">Each garment is a button in the studio and a tab in the size chart. Edit one to change its 3D model, price and size chart measurements.</p>`+
+ (grs.length?grs.map(g=>`<div class="row" style="margin:0 0 6px"><b>${esc(g.name)}</b><span class="mu">EGP ${g.price||0} · ${g.builtin?'built-in model':g.url?'model link':'uploaded model'}${g.visible===false?' · hidden':''}</span><button class="btn g s" data-a="gedit" data-id="${esc(g.id)}">Edit</button><button class="btn r s" data-a="gdel" data-id="${esc(g.id)}">Delete</button></div>`).join('')
+ :`<p style="margin:0 0 8px">Showing the built-in <b>Boxy Tee</b> and <b>Boxy Hoodie</b>.</p><button class="btn g s" data-a="gseed">Import them so I can edit or remove them</button>`)+`</div>
+ <div class="card sec"><div class="row"><h3 style="flex:1;margin:0">Fonts <small>${o.fonts.length}</small></h3><button class="btn s" data-a="fadd">+ Add font</button>${o.custom.fonts?'<button class="btn g s" data-a="freset">Reset</button>':''}</div>
+ <div style="max-height:220px;overflow:auto;margin-top:8px">${o.fonts.map((f,i)=>`<span class="chip">${esc(f.label||f.family)} <small>${esc(f.family)}</small><a data-a="fdel" data-id="${i}" title="Remove">✕</a></span>`).join('')}</div>
+ <p class="mu" style="margin:6px 0 0">Add any font from fonts.google.com by its exact name.</p></div>
+ <div class="card sec"><div class="row"><h3 style="flex:1;margin:0">Sizes</h3>${o.custom.sizes?'<button class="btn g s" data-a="szreset">Reset</button>':''}</div>
+ ${o.sizes.map((z,i)=>`<span class="chip">${esc(z)}<a data-a="szdel" data-id="${i}">✕</a></span>`).join('')}
+ <div class="row" style="margin:6px 0 0"><input id="szin" placeholder="e.g. 3XL" style="width:120px;margin:0"><button class="btn g s" data-a="szadd">+ Add size</button></div></div>
+ <div class="card sec"><div class="row"><h3 style="flex:1;margin:0">Ink colors</h3>${o.custom.inks?'<button class="btn g s" data-a="inkreset">Reset</button>':''}</div>
+ ${o.inks.map((c,i)=>`<span class="chip"><span style="width:14px;height:14px;border-radius:50%;background:${esc(c.hex)};border:1px solid #fff4"></span>${esc(c.name)}<a data-a="inkdel" data-id="${i}">✕</a></span>`).join('')}
+ <div class="row" style="margin:6px 0 0"><input id="inkhex" type="color" value="#C5A880" style="width:46px;height:36px;padding:2px;margin:0"><input id="inkname" placeholder="Name, e.g. Forest Green Ink" style="flex:1;margin:0"><button class="btn g s" data-a="inkadd">+ Add</button></div></div>
+ <div class="card sec"><h3>Studio features</h3>
+ <label class="ck"><input type="checkbox" data-ch="feat" data-k="back" ${o.features.back?'checked':''}> Back print option</label>
+ <label class="ck"><input type="checkbox" data-ch="feat" data-k="draw" ${o.features.draw?'checked':''}> Draw on the front</label>
+ <label class="ck"><input type="checkbox" data-ch="feat" data-k="photo" ${o.features.photo?'checked':''}> Upload a photo on the front</label>
+ <p class="mu" style="margin:8px 0 0">Studio colors are managed in the Studio colors tab.</p></div>`};
+views.studio=()=>{lastSig=JSON.stringify([grs,so]);return `<div class="bar"><h2>Bespoke Studio</h2><small class="mu">Live preview on the right updates after every save.</small></div>
+ <div class="studio"><div id="stpanel">${stPanel()}</div><iframe id="stfr" src="index.html?fekra-studio=1"></iframe></div>`};
+let prevT;
+const drawStudio=()=>{if(tab!=='studio'||!$('#stpanel'))return;$('#stpanel').innerHTML=stPanel();const sig=JSON.stringify([grs,so]);
+ if(sig!==lastSig){lastSig=sig;clearTimeout(prevT);prevT=setTimeout(()=>{const f=$('#stfr');try{f&&f.contentWindow.location.reload()}catch(x){}},700)}};
+function fontform(){modal(`<h3>Add a font</h3><form id="ff"><label>Name shown to customers<input name="label" required placeholder="Retro Script"></label>
+ <label>Google Fonts name (exact)<input name="family" required placeholder="Pacifico"></label>
+ <div class="g2"><label>Weight<select name="weight"><option>400</option><option>500</option><option>600</option><option>700</option><option>800</option></select></label><label>Size on the shirt (px)<input name="size" type="number" min="20" max="90" value="40"></label>
+ <label>Style if the font fails to load<select name="fb"><option>sans-serif</option><option>serif</option><option>cursive</option></select></label><label class="ck" style="margin-top:30px"><input type="checkbox" name="italic"> Italic</label></div>
+ <p class="mu">Find fonts at fonts.google.com. Copy the family name exactly (for example "Permanent Marker"). Arabic-capable fonts work too.</p>
+ <div class="act"><button class="btn">Add</button><button type="button" class="btn g" data-a="close">Cancel</button></div></form>`);
+ $('#ff').onsubmit=e=>{e.preventDefault();const E=e.target.elements,o=opt(),fam=E.family.value.trim();if(o.fonts.some(f=>f.family.toLowerCase()===fam.toLowerCase()))return alert('That font is already in the list.');
+  saveOpt({fonts:[...o.fonts,{key:slug(E.label.value)+'-'+Math.random().toString(36).slice(2,5),label:E.label.value.trim(),family:fam,fb:E.fb.value,weight:+E.weight.value,size:+E.size.value||40,italic:E.italic.checked}]});closeM()}}
+const seedG=async()=>{const b=db.batch();DEF_GARMENTS.forEach(g=>b.set(db.collection('garments').doc(g.id),g));await b.commit()};
+async function openChart(id){if(!can('garments'))return toast('You do not have permission to edit size charts.');
+ try{if(!grs.length)await seedG();go('studio');setTimeout(()=>{gform(grs.find(g=>g.id===id)||DEF_GARMENTS.find(g=>g.id===id)||grs[0]||DEF_GARMENTS[0]);const c=$('#gchart');c&&c.scrollIntoView()},250)}catch(x){fail(x)}}
+views.staff=()=>`<div class="bar"><h2>Team</h2><button class="btn" data-a="snew">+ Add team member</button></div>`+
+ stf.map(u=>`<div class="card"><div class="row"><b>${esc(u.username)}</b><span class="tag">${esc(u.role)}</span>${u.active===false?'<span class="tag cancelled">disabled</span>':''}${u.id===me.id?'<span class="mu">(you)</span>':''}</div>`+
+ (u.role==='owner'?'<p class="mu" style="margin:0">Full access</p>':`<div class="perms">${Object.entries(PERMS).map(([k,v])=>`<label class="ck"><input type="checkbox" data-ch="perm" data-id="${u.id}" data-k="${k}" ${(u.perms||[]).includes(k)?'checked':''}> ${v}</label>`).join('')}</div>`)+
+ `<div class="act"><button class="btn g s" data-a="elogin" data-id="${u.id}">Edit username / password</button>${u.role==='owner'?'':`<button class="btn g s" data-a="stoggle" data-id="${u.id}">${u.active===false?'Enable':'Disable'}</button><button class="btn r s" data-a="sdel" data-id="${u.id}">Remove</button>`}</div></div>`).join('');
+views.settings=()=>`<div class="bar"><h2>Store settings</h2></div><form class="card" id="sf"><div class="g2"><label>WhatsApp number (country code, digits only)<input name="whatsapp" value="${esc(cfg.whatsapp)}" placeholder="201094390395"></label><label>WhatsApp shown on site<input name="whatsappDisplay" value="${esc(cfg.whatsappDisplay)}" placeholder="+20 109 439 0395"></label>
+ <label>Instagram handle<input name="instagram" value="${esc(cfg.instagram)}" placeholder="fekra.wear"></label><label>Shipping fee (EGP)<input name="shippingFee" type="number" min="0" value="${esc(cfg.shippingFee)}"></label>
+ <label>Cloudinary cloud name (optional)<input name="cloudName" value="${esc(cfg.cloudName)}"></label><label>Cloudinary upload preset (optional)<input name="uploadPreset" value="${esc(cfg.uploadPreset)}"></label></div>
+ <p class="mu">Without Cloudinary, product photos are compressed and stored inside the database. That works fine for a small catalog.</p><button class="btn">Save settings</button></form>`;
+
+// ---------- forms ----------
+const inkFor=h=>{const n=parseInt(String(h).replace('#',''),16)||0;return(.299*(n>>16)+.587*((n>>8)&255)+.114*(n&255))/255>.6?'#141417':'#C5A880'};
+const colRow=c=>`<div class="row pcr" style="margin:8px 0 0"><input type="color" value="${esc(c.hex||'#141416')}" style="width:46px;height:38px;padding:2px;margin:0;flex:none"><input type="text" placeholder="Color name (e.g. Olive)" value="${esc(c.name)}" style="flex:1;margin:0"><button type="button" class="btn r s" data-a="pdelcol">✕</button></div>`;
+function pform(p){if(!chs.length)return alert('Create a chapter first.');
+ const pcl=(p.colors||[]).map(c=>typeof c==='string'?cols.find(x=>x.id===c):c).filter(Boolean);
+ modal(`<h3>${p.id?'Edit':'New'} product</h3><form id="pf"><label>Title<input name="title" required value="${esc(p.title)}"></label><label>Arabic title<input name="arabicTitle" dir="rtl" value="${esc(p.arabicTitle)}"></label>
+ <div class="g2"><label>Chapter<select name="category">${chs.map(c=>`<option value="${c.id}" ${c.id===p.category?'selected':''}>${esc(c.name)}${c.archived?' (archived)':''}</option>`).join('')}</select></label><label>Price (EGP)<input name="price" type="number" min="0" required value="${p.price??''}"></label>
+ <label>Edition<input name="edition" value="${esc(p.edition)}" placeholder="Boxy Fit"></label><label>Fabric / print<input name="fabric" value="${esc(p.fabric)}" placeholder="Screen Print"></label></div>
+ <label>Description<textarea name="description">${esc(p.description)}</textarea></label><label>Photo<input name="file" type="file" accept="image/*"></label>
+ <label>…or image link<input name="image" value="${p.image&&!p.image.startsWith('data:')?esc(p.image):''}" placeholder="https://"></label>${p.image?`<img src="${esc(p.image)}" style="height:70px;margin-top:8px;border-radius:4px">`:''}
+ <label>Colors this product comes in</label><div id="pcols">${pcl.map(colRow).join('')}</div><button type="button" class="btn g s" data-a="paddcol" style="margin-top:8px">+ Add color</button><p class="mu" style="margin:6px 0 0">Only these colors are offered for this product. Leave empty for no color choice.</p>
+ <label class="ck"><input type="checkbox" name="visible" ${p.visible===false?'':'checked'}> Visible in the store</label><div class="act" style="margin-top:16px"><button class="btn">Save</button><button type="button" class="btn g" data-a="close">Cancel</button></div></form>`);
+ $('#pf').onsubmit=async e=>{e.preventDefault();const E=e.target.elements,b=E[E.length-2];b.disabled=true;
+  try{let img=E.image.value.trim()||p.image||'';if(E.file.files[0])img=await upImg(E.file.files[0]);
+   await(p.id?db.collection('products').doc(p.id):db.collection('products').doc()).set({title:E.title.value.trim(),arabicTitle:E.arabicTitle.value.trim(),category:E.category.value,price:+E.price.value,edition:E.edition.value.trim(),fabric:E.fabric.value.trim(),description:E.description.value.trim(),image:img,colors:[...document.querySelectorAll('#pcols .pcr')].map(r=>{const hex=r.querySelector('input[type=color]').value,name=r.querySelector('input[type=text]').value.trim();return{name:name||hex,hex,ink:inkFor(hex)}}),visible:E.visible.checked,updatedAt:FV.serverTimestamp(),updatedBy:me.username},{merge:true});
+   closeM();toast('Product saved')}catch(x){fail(x);b.disabled=false}}}
+function cform(c){modal(`<h3>${c.id?'Edit':'New'} chapter</h3><form id="cf"><div class="g2"><label>Name (English)<input name="name" required value="${esc(c.name)}"></label><label>Arabic name<input name="arabic" dir="rtl" value="${esc(c.arabic)}"></label>
+ <label>Banner Arabic (styled)<input name="bannerArabic" dir="rtl" value="${esc(c.bannerArabic)}"></label><label>Order<input name="order" type="number" value="${c.order??chs.length+1}"></label></div>
+ <label>Type<select name="type"><option value="single">Single tee (normal)</option><option value="pair" ${c.type==='pair'?'selected':''}>Pair of 2 tees (7oby style)</option></select></label>
+ <label>Small tag line<input name="tag" value="${esc(c.tag)}" placeholder="Chapter I • RASMA (The Sketch)"></label><label>Story title<input name="title" value="${esc(c.title)}"></label><label>Story<textarea name="story">${esc(c.story)}</textarea></label>
+ <div class="act" style="margin-top:16px"><button class="btn">Save</button><button type="button" class="btn g" data-a="close">Cancel</button></div></form>`);
+ $('#cf').onsubmit=async e=>{e.preventDefault();const E=e.target.elements;try{const id=c.id||slug(E.name.value);if(!id)throw Error('Please enter a name using letters or numbers');if(!c.id&&chs.some(x=>x.id===id))throw Error('A chapter with this name already exists');
+  await db.collection('chapters').doc(id).set({name:E.name.value.trim(),arabic:E.arabic.value.trim(),bannerArabic:E.bannerArabic.value.trim(),order:+E.order.value||0,type:E.type.value,tag:E.tag.value.trim(),title:E.title.value.trim(),story:E.story.value.trim()},{merge:true});closeM();toast('Chapter saved')}catch(x){fail(x)}}}
+function colform(c){modal(`<h3>${c.id?'Edit':'New'} studio color</h3><form id="kf"><label>Name<input name="name" required value="${esc(c.name)}" placeholder="Desert Sand"></label>
+ <div class="g2"><label>Shirt color<input name="hex" type="color" value="${esc(c.hex||'#141416')}" style="height:42px;padding:3px"></label><label>Print ink on this shirt<input name="ink" type="color" value="${esc(c.ink||'#C5A880')}" style="height:42px;padding:3px"></label></div>
+ <label>Available in the bespoke studio for</label>${gList().map(g=>`<label class="ck"><input type="checkbox" class="kg" value="${esc(g.id)}" ${(c.id?colorOk(c,g.id):true)?'checked':''}> ${esc(g.name)}</label>`).join('')}
+ <label>Order<input name="order" type="number" value="${c.order??cols.length+1}"></label>
+ <div class="act" style="margin-top:16px"><button class="btn">Save</button><button type="button" class="btn g" data-a="close">Cancel</button></div></form>`);
+ $('#kf').onsubmit=async e=>{e.preventDefault();const E=e.target.elements;try{const ids=[...document.querySelectorAll('#kf .kg:checked')].map(x=>x.value),id=c.id||slug(E.name.value);if(!id)throw Error('Please enter a name');if(!c.id&&cols.some(x=>x.id===id))throw Error('A color with this name already exists');
+  await db.collection('colors').doc(id).set({name:E.name.value.trim(),hex:E.hex.value,ink:E.ink.value,studioGarments:ids,studioTee:ids.includes('tee'),studioHoodie:ids.includes('hoodie'),order:+E.order.value||0},{merge:true});closeM();toast('Color saved')}catch(x){fail(x)}}}
+// ---------- garments: 3D model + price + size chart ----------
+let gc={cols:[],rows:[]};
+const toB64=buf=>{const u=new Uint8Array(buf);let o=[];for(let i=0;i<u.length;i+=0x8000)o.push(String.fromCharCode.apply(null,u.subarray(i,i+0x8000)));return btoa(o.join(''))};
+function checkGLB(buf){const dv=new DataView(buf);if(buf.byteLength<20||dv.getUint32(0,true)!==0x46546C67)throw Error('That is not a valid .glb file.');
+ let j;try{j=JSON.parse(new TextDecoder().decode(new Uint8Array(buf,20,dv.getUint32(12,true))))}catch(x){throw Error('Could not read that 3D model.')}
+ if([...(j.extensionsRequired||[]),...(j.extensionsUsed||[])].some(x=>/draco|meshopt|quantization/i.test(x)))throw Error('Compressed models are not supported. Export the .glb again without Draco / meshopt compression.');
+ if(!(j.meshes||[]).length)throw Error('No 3D mesh found inside that file.')}
+const gSync=()=>{const f=$('#gf');if(!f)return;gc.cols=[...f.querySelectorAll('.gce')].map((x,i)=>({en:x.value.trim(),ar:f.querySelectorAll('.gca')[i].value.trim()}));
+ gc.rows=[...f.querySelectorAll('.grow')].map(r=>[...r.querySelectorAll('.gcell')].map(x=>x.value.trim()))};
+const gDraw=()=>{$('#gchart').innerHTML=`<div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%"><thead><tr>${gc.cols.map((c,i)=>`<th style="padding:3px;min-width:120px;font-weight:400"><input class="gce" placeholder="Column title" value="${esc(c.en)}"><input class="gca" dir="rtl" placeholder="عربي (optional)" value="${esc(c.ar)}">${gc.cols.length>1?`<button type="button" class="btn r s" data-a="gdelcolm" data-id="${i}" style="margin-top:4px">✕ column</button>`:''}</th>`).join('')}<th></th></tr></thead>
+ <tbody>${gc.rows.map((r,ri)=>`<tr class="grow">${gc.cols.map((_,i)=>`<td style="padding:3px"><input class="gcell" value="${esc(r[i])}"></td>`).join('')}<td style="padding:3px"><button type="button" class="btn r s" data-a="gdelrow" data-id="${ri}">✕</button></td></tr>`).join('')}</tbody></table></div>
+ <div class="act"><button type="button" class="btn g s" data-a="gaddrow">+ Add size row</button><button type="button" class="btn g s" data-a="gaddcolm">+ Add column</button></div>`};
+function gform(g){
+ const ch=g.chart||{cols:DEF_CHART_COLS,rows:['XS','S','M','L','XL','XXL'].map(x=>[x,'','','',''])};
+ gc={cols:ch.cols.map(c=>({en:c.en||'',ar:c.ar||''})),rows:(ch.rows||[]).map(r=>r.slice())};
+ const nv=v=>v==null?'':v;
+ modal(`<h3>${g.id?'Edit':'New'} garment</h3><form id="gf">
+ <div class="g2"><label>Name (English)<input name="name" required value="${esc(g.name)}" placeholder="Regular Fit Hoodie"></label><label>Name (Arabic)<input name="nameAr" dir="rtl" value="${esc(g.nameAr)}"></label>
+ <label>Short name (shown in "Inspect 3D ...")<input name="short" value="${esc(g.short)}" placeholder="Hoodie"></label><label>Studio price (EGP)<input name="price" type="number" min="0" required value="${g.price??''}"></label>
+ <label>Order<input name="order" type="number" value="${g.order??grs.length+1}"></label><label class="ck" style="margin-top:30px"><input type="checkbox" name="visible" ${g.visible===false?'':'checked'}> Visible on the website</label></div>
+ <h3 style="margin-top:22px">3D model</h3>
+ <p class="mu" style="margin:4px 0 0">${g.id?(g.builtin?'Currently using the built-in model.':g.url?'Currently using a model from a link.':'Currently using an uploaded model.')+' Choose a new file below to replace it.':'Upload the garment as a .glb file.'}</p>
+ <label>3D model file (.glb, max 4 MB)<input name="file" type="file" accept=".glb,model/gltf-binary"></label>
+ <label>…or link to a .glb file (optional)<input name="url" value="${esc(g.url)}" placeholder="https://"></label>
+ <p class="mu" style="margin:6px 0 0">Model tips: one plain .glb, no Draco/meshopt compression, front of the garment facing +Z, Y up. Colors and textures in the file are ignored, because the studio paints the garment itself.</p>
+ <details style="margin-top:10px"><summary class="mu" style="cursor:pointer">Fine-tune size and print area (optional)</summary><div class="g2">
+ <label>Model size, % (100 = auto-fit)<input name="sizeAdj" type="number" min="20" max="300" value="${nv(g.sizeAdj)}" placeholder="100"></label>
+ <label>Print area width, % of garment width<input name="printSize" type="number" min="10" max="150" value="${nv(g.printSize)}" placeholder="70"></label>
+ <label>Print area height, % up (+) / down (−)<input name="printY" type="number" min="-60" max="60" value="${nv(g.printY)}" placeholder="3"></label></div></details>
+ <h3 style="margin-top:22px">Size chart</h3>
+ <div class="g2"><label>Tab label (English)<input name="chartTab" value="${esc(g.chartTab)}" placeholder="Regular Fit Hoodies"></label><label>Tab label (Arabic)<input name="chartTabAr" dir="rtl" value="${esc(g.chartTabAr)}"></label>
+ <label>Sentence under the title (English)<textarea name="subtitle" style="min-height:60px">${esc(g.subtitle)}</textarea></label><label>Sentence under the title (Arabic)<textarea name="subtitleAr" dir="rtl" style="min-height:60px">${esc(g.subtitleAr)}</textarea></label></div>
+ <p class="mu" style="margin:10px 0 0">Type exactly what customers should read in each cell, for example <i>61 cm</i>. The first column is the size name.</p><div id="gchart"></div>
+ <div class="act" style="margin-top:18px"><button class="btn" id="gsave">Save</button><button type="button" class="btn g" data-a="close">Cancel</button></div></form>`);
+ $('#mb').style.maxWidth='920px';gDraw();
+ $('#gf').onsubmit=async e=>{e.preventDefault();const E=e.target.elements,b=$('#gsave');b.disabled=true;
+  try{gSync();if(gc.cols.some(c=>!c.en))throw Error('Every size chart column needs a title.');
+   const id=g.id||slug(E.name.value);if(!id)throw Error('Please enter a name using letters or numbers');if(!g.id&&grs.some(x=>x.id===id))throw Error('A garment with this name already exists');
+   const num=v=>v===''?FV.delete():+v;
+   const d={name:E.name.value.trim(),nameAr:E.nameAr.value.trim(),short:E.short.value.trim()||E.name.value.trim(),price:+E.price.value||0,order:+E.order.value||0,visible:E.visible.checked,
+    chartTab:E.chartTab.value.trim(),chartTabAr:E.chartTabAr.value.trim(),subtitle:E.subtitle.value.trim(),subtitleAr:E.subtitleAr.value.trim(),
+    sizeAdj:num(E.sizeAdj.value),printSize:num(E.printSize.value),printY:num(E.printY.value),
+    chart:{cols:gc.cols,rows:gc.rows},updatedAt:FV.serverTimestamp(),updatedBy:me.username};
+   const file=E.file.files[0],link=E.url.value.trim();let chunks=null,wipe=false;
+   if(file){if(!/\.glb$/i.test(file.name))throw Error('Please choose a .glb file.');if(file.size>4*1024*1024)throw Error('That file is over 4 MB. Reduce the model (fewer triangles) or host it and paste a link instead.');
+    const buf=await file.arrayBuffer();checkGLB(buf);const b64=toB64(buf);chunks=[];for(let i=0;i<b64.length;i+=700000)chunks.push(b64.slice(i,i+700000));
+    Object.assign(d,{builtin:'',url:'',modelVer:Date.now()});wipe=true}
+   else if(link){if(link!==(g.url||'')){Object.assign(d,{builtin:'',url:link,modelVer:Date.now()});wipe=true}}
+   else if(g.url)throw Error('Upload a .glb file, or keep the link.');
+   else if(!g.id)throw Error('Please choose a .glb 3D model file for this garment.');
+   if(!('builtin' in d)&&g.builtin)d.builtin=g.builtin;
+   const ref=db.collection('garments').doc(id),bt=db.batch();
+   if(!grs.length)DEF_GARMENTS.forEach(x=>{if(x.id!==id)bt.set(db.collection('garments').doc(x.id),x)});
+   if(wipe)(await ref.collection('chunks').get()).docs.forEach(x=>bt.delete(x.ref));
+   if(chunks)chunks.forEach((c,n)=>bt.set(ref.collection('chunks').doc('c'+String(n).padStart(3,'0')),{n,b64:c}));
+   bt.set(ref,d,{merge:true});await bt.commit();closeM();toast('Garment saved')}
+  catch(x){fail(x);b.disabled=false}}}
+const UN='pattern="[A-Za-z0-9._-]{3,}" title="Letters, numbers . _ - (3+ characters)"';
+const taken=async n=>(await db.collection('logins').doc(n).get()).exists;
+async function mkAcct(name,pw){const app2=firebase.initializeApp(CFG,'s'+Date.now());
+ try{const email=name+'.'+Math.random().toString(36).slice(2,8)+'@fekra.team',cr=await app2.auth().createUserWithEmailAndPassword(email,pw);return{uid:cr.user.uid,email}}
+ finally{await app2.auth().signOut().catch(()=>{});app2.delete()}}
+function setupForm(){modal(`<h3>Create the first owner</h3><form id="su"><p class="mu">Works only once, before any owner exists. You need the setup code you wrote inside firestore.rules.</p>
+ <label>Setup code<input name="c" required autocomplete="off"></label><label>Owner username<input name="u" required ${UN}></label><label>Password (min 6 characters)<input name="p" type="text" minlength="6" required autocomplete="off"></label>
+ <div class="act" style="margin-top:16px"><button class="btn">Create owner</button><button type="button" class="btn g" data-a="close">Cancel</button></div></form>`);
+ $('#su').onsubmit=async e=>{e.preventDefault();const E=e.target.elements,name=uname(E.u.value);let cr;
+  try{const email=name+'.'+Math.random().toString(36).slice(2,8)+'@fekra.team';cr=await auth.createUserWithEmailAndPassword(email,E.p.value);
+   const b=db.batch();b.set(db.collection('meta').doc('setup'),{code:E.c.value.trim(),at:FV.serverTimestamp()});
+   b.set(db.collection('users').doc(cr.user.uid),{username:name,role:'owner',perms:[],active:true});b.set(db.collection('logins').doc(name),{email,uid:cr.user.uid});b.set(db.collection('meta').doc('status'),{done:true});
+   await b.commit();location.reload()}
+  catch(x){if(cr)await cr.user.delete().catch(()=>{});alert(x.code==='permission-denied'?'Wrong setup code, or the first owner already exists.':x.message)}}}
+function sform(){modal(`<h3>New team member</h3><form id="nf"><label>Username (letters/numbers, no spaces)<input name="u" required ${UN} autocomplete="off"></label><label>Password (min 6 characters)<input name="p" type="text" minlength="6" required autocomplete="off"></label>
+ <label>Role<select name="role"><option value="staff">Staff (only what you tick)</option><option value="owner">Owner (everything)</option></select></label>
+ <label>Staff can do</label><div class="perms">${Object.entries(PERMS).map(([k,v])=>`<label class="ck"><input type="checkbox" name="${k}"> ${v}</label>`).join('')}</div>
+ <div class="act" style="margin-top:16px"><button class="btn">Create</button><button type="button" class="btn g" data-a="close">Cancel</button></div></form>`);
+ $('#nf').onsubmit=async e=>{e.preventDefault();const E=e.target.elements,name=uname(E.u.value),role=E.role.value;
+  try{if(await taken(name))throw Error('That username is already taken');const a=await mkAcct(name,E.p.value),b=db.batch();
+   b.set(db.collection('users').doc(a.uid),{username:name,role,perms:role==='owner'?[]:Object.keys(PERMS).filter(k=>E[k].checked),active:true,createdBy:me.username});
+   b.set(db.collection('logins').doc(name),{email:a.email,uid:a.uid});await b.commit();closeM();toast('Account created')}catch(x){fail(x)}}}
+function eform(id){const u=stf.find(x=>x.id===id);if(!u)return;
+ modal(`<h3>Edit login — ${esc(u.username)}</h3><form id="ef"><label>Username<input name="u" required ${UN} value="${esc(u.username)}" autocomplete="off"></label><label>New password (min 6 characters)<input name="p" type="text" minlength="6" required autocomplete="off"></label>
+ <p class="mu">Always set a new password when you change a login. The old password stops working straight away.${id===me.id?' This is your own account, so you will be logged out and must log in again.':''}</p>
+ <div class="act"><button class="btn">Save</button><button type="button" class="btn g" data-a="close">Cancel</button></div></form>`);
+ $('#ef').onsubmit=async e=>{e.preventDefault();const E=e.target.elements,name=uname(E.u.value),{id:_,...prof}=u;
+  try{if(name!==u.username&&await taken(name))throw Error('That username is already taken');const a=await mkAcct(name,E.p.value),b=db.batch();
+   b.set(db.collection('users').doc(a.uid),{...prof,username:name,updatedBy:me.username});b.delete(db.collection('users').doc(id));
+   if(name!==u.username)b.delete(db.collection('logins').doc(u.username));b.set(db.collection('logins').doc(name),{email:a.email,uid:a.uid});
+   await b.commit();closeM();if(id===me.id){auth.signOut();alert('Login changed. Please log in again.')}else toast('Login updated')}catch(x){fail(x)}}}
+
+async function sweep(){const cut=firebase.firestore.Timestamp.fromMillis(Date.now()-30*864e5);let n=0;
+ for(;;){const q=await db.collection('orders').where('createdAt','<',cut).limit(400).get();if(q.empty)break;const b=db.batch();q.docs.forEach(d=>b.delete(d.ref));await b.commit();n+=q.size;if(q.size<400)break}return n}
+
+// ---------- website text editor (talks to the preview iframe) ----------
+let cur=null;const frame=()=>{const f=$('#sitefr');return f&&f.contentWindow},tell=m=>{const f=frame();if(f)f.postMessage({src:'fekra-admin',...m},location.origin)};
+window.addEventListener('message',e=>{const m=e.data;if(e.origin!==location.origin||!m||m.src!=='fekra')return;const sel=$('#sitesel'),sv=$('#ssave');
+ if(m.type==='select'){cur={key:m.key,lang:m.lang};if(sel)sel.innerHTML='Editing <b>'+(m.lang==='ar'?'Arabic':'English')+'</b>: '+esc(m.label);if(sv)sv.disabled=true}
+ else if(m.type==='dirty'){if(sv)sv.disabled=false}
+ else if(m.type==='chart')openChart(m.id)
+ else if(m.type==='html')db.collection('content').doc('site').set({texts:{[m.key]:{[m.lang]:m.html,o:m.o}}},{merge:true}).then(()=>{toast('Changes saved');if(sv)sv.disabled=true;tell({type:'saved',key:m.key,lang:m.lang,o:m.o,html:m.html})}).catch(fail)});
+
+// ---------- clicks ----------
+const acts={tab:(id)=>go(id),close:closeM,out:()=>auth.signOut(),
+ pw:()=>{const p=prompt('New password (min 6 characters)');if(p)auth.currentUser.updatePassword(p).then(()=>toast('Password changed')).catch(e=>alert(e.code==='auth/requires-recent-login'?'For safety, log out, log in again, then retry.':e.message))},
+ carch:id=>{const c=chs.find(x=>x.id===id);db.collection('chapters').doc(id).update({archived:!c.archived}).then(()=>toast(c.archived?'Chapter restored':'Chapter archived: hidden from the website')).catch(fail)},
+ paddcol:()=>$('#pcols').insertAdjacentHTML('beforeend',colRow({})),pdelcol:(id,t)=>t.closest('.pcr').remove(),
+ coledit:id=>colform(cols.find(c=>c.id===id)||{}),
+ gedit:id=>gform(grs.find(g=>g.id===id)||{}),
+ gaddrow:()=>{gSync();gc.rows.push(gc.cols.map(()=>''));gDraw()},
+ gdelrow:id=>{gSync();gc.rows.splice(+id,1);gDraw()},
+ gaddcolm:()=>{gSync();gc.cols.push({en:'',ar:''});gc.rows.forEach(r=>r.push(''));gDraw()},
+ gdelcolm:id=>{gSync();gc.cols.splice(+id,1);gc.rows.forEach(r=>r.splice(+id,1));gDraw()},
+ gseed:async()=>{try{await seedG();toast('Imported. You can edit or remove them now.')}catch(x){fail(x)}},
+ fadd:fontform,fdel:id=>{const o=opt();if(o.fonts.length<2)return alert('Keep at least one font.');saveOpt({fonts:o.fonts.filter((_,i)=>i!==+id)})},freset:()=>confirm('Go back to the original font list?')&&db.collection('studio').doc('options').update({fonts:FV.delete()}).then(()=>toast('Reset')).catch(fail),
+ szadd:()=>{const v=$('#szin').value.trim().toUpperCase();if(!v)return;const o=opt();if(o.sizes.includes(v))return toast('Already there');saveOpt({sizes:[...o.sizes,v]})},szdel:id=>{const o=opt();if(o.sizes.length<2)return alert('Keep at least one size.');saveOpt({sizes:o.sizes.filter((_,i)=>i!==+id)})},szreset:()=>db.collection('studio').doc('options').update({sizes:FV.delete()}).then(()=>toast('Reset')).catch(fail),
+ inkadd:()=>{const n=$('#inkname').value.trim();if(!n)return toast('Give the ink a name');const o=opt();saveOpt({inks:[...o.inks,{name:n,hex:$('#inkhex').value}]})},inkdel:id=>{const o=opt();if(o.inks.length<2)return alert('Keep at least one ink color.');saveOpt({inks:o.inks.filter((_,i)=>i!==+id)})},inkreset:()=>db.collection('studio').doc('options').update({inks:FV.delete()}).then(()=>toast('Reset')).catch(fail),
+ gdel:async id=>{const g=grs.find(x=>x.id===id);if(!g||!confirm('Delete "'+g.name+'" for good? It disappears from the 3D studio and the size chart.'))return;
+  try{const ref=db.collection('garments').doc(id),b=db.batch();(await ref.collection('chunks').get()).docs.forEach(x=>b.delete(x.ref));b.delete(ref);await b.commit();toast('Deleted')}catch(x){fail(x)}},
+ pedit:id=>pform(prs.find(p=>p.id===id)||{}),cedit:id=>cform(chs.find(c=>c.id===id)||{}),snew:sform,elogin:eform,setup:setupForm,
+ coldel:id=>confirm('Delete this color? Products that used it simply stop showing it.')&&db.collection('colors').doc(id).delete().then(()=>toast('Deleted')).catch(fail),
+ slang:id=>{cur=null;tell({type:'lang',lang:id})},
+ ssave:()=>cur?tell({type:'getHtml'}):toast('Click a text in the preview first'),
+ sreset:async()=>{if(!cur)return toast('Click a text in the preview first');if(!confirm('Remove your edit and go back to the original text?'))return;
+  try{await db.collection('content').doc('site').update(new firebase.firestore.FieldPath('texts',cur.key,cur.lang),FV.delete());tell({type:'reset',key:cur.key,lang:cur.lang});toast('Reset to original')}catch(x){fail(x)}},
+ pdel:id=>confirm('Delete this product for good?')&&db.collection('products').doc(id).delete().then(()=>toast('Deleted')).catch(fail),
+ cdel:async id=>{try{if(!(await db.collection('products').where('category','==',id).limit(1).get()).empty)return alert('This chapter still has products. Move or delete them first.');
+  if(confirm('Delete this chapter?'))await db.collection('chapters').doc(id).delete()}catch(x){fail(x)}},
+ stoggle:id=>db.collection('users').doc(id).update({active:stf.find(u=>u.id===id).active===false}).catch(fail),
+ sdel:id=>{const u=stf.find(x=>x.id===id);confirm('Remove this person? They will lose all access.')&&db.batch().delete(db.collection('users').doc(id)).delete(db.collection('logins').doc(u.username)).commit().catch(fail)}};
+document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(t&&acts[t.dataset.a]){e.preventDefault();acts[t.dataset.a](t.dataset.id,t)}});
+document.addEventListener('change',e=>{const t=e.target,k=t.dataset.ch;if(!k)return;
+ if(k==='of'){of=t.value;render()}else if(k==='oq'){oq=t.value.trim().toLowerCase();render()}
+ else if(k==='st')db.collection('orders').doc(t.dataset.id).update({status:t.value,statusBy:me.username,statusAt:FV.serverTimestamp()}).then(()=>toast('Status updated')).catch(fail);
+ else if(k==='feat')saveOpt({features:{[t.dataset.k]:t.checked}});
+ else if(k==='perm')db.collection('users').doc(t.dataset.id).update({perms:t.checked?FV.arrayUnion(t.dataset.k):FV.arrayRemove(t.dataset.k)}).catch(fail)});
+document.addEventListener('submit',async e=>{if(e.target.id!=='sf')return;e.preventDefault();const E=e.target.elements;
+ const d={whatsapp:E.whatsapp.value.replace(/\D/g,''),whatsappDisplay:E.whatsappDisplay.value.trim(),instagram:E.instagram.value.replace('@','').trim(),shippingFee:+E.shippingFee.value||0,cloudName:E.cloudName.value.trim(),uploadPreset:E.uploadPreset.value.trim()};
+ try{await db.collection('settings').doc('store').set(d,{merge:true});cfg={...cfg,...d};toast('Settings saved')}catch(x){fail(x)}});
+</script></body></html>
