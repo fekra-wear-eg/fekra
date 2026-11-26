@@ -83,6 +83,7 @@ function start(){$('#login').hidden=true;$('#app').hidden=false;$('#who').textCo
  sub(db.collection('colors'),s=>{cols=L(s).sort((a,b)=>(a.order||0)-(b.order||0));draw('colors')});
  if(can('garments'))sub(db.collection('garments'),s=>{grs=L(s).sort((a,b)=>(a.order||0)-(b.order||0));drawStudio();draw('colors')});
  if(can('content'))unsub.push(db.collection('content').doc('theme').onSnapshot(d=>{th=d.exists?d.data():{};if(tab==='design'&&!$('#dpanel'))render()},fail));
+ if(can('content'))unsub.push(db.collection('content').doc('designs').onSnapshot(d=>{const x=d.exists?d.data():{};ds=x.list||[];dact=x.active||'';if(tab==='design'&&$('#dlist'))dRefresh()},fail));
  if(can('garments'))unsub.push(db.collection('studio').doc('options').onSnapshot(d=>{so=d.exists?d.data():null;drawStudio()},fail));
  if(can('products'))sub(db.collection('products'),s=>{prs=L(s).sort((a,b)=>(a.title||'').localeCompare(b.title||''));draw('products')});
  if(can('orders_view')||can('orders_edit'))sub(db.collection('orders').orderBy('createdAt','desc').limit(300),s=>{ors=L(s);draw('orders')});
@@ -176,13 +177,32 @@ async function openChart(id){if(!can('garments'))return toast('You do not have p
 const DCOL=[['champagne','Accent color (gold: buttons, lines, highlights)','#C5A880'],['champagneDark','Accent, darker shade','#9E825B'],['obsidian','Page background','#0A0A0B'],['charcoal','Cards & panels','#131316'],['alabaster','Main text','#F4F1EA'],['stone','Soft grey text','#A39E93']];
 const DFONT=[['serif','Headings & big titles (English)','Cormorant Garamond'],['sans','Body text & buttons (English)','Plus Jakarta Sans'],['arHead','Headings (Arabic)','Amiri'],['arBody','Body text (Arabic)','Cairo']];
 const GFONTS=['Cormorant Garamond','Playfair Display','Cinzel','Lora','Libre Baskerville','DM Serif Display','Bodoni Moda','Montserrat','Poppins','Inter','Raleway','Jost','Outfit','Space Grotesk','Oswald','Bebas Neue','Plus Jakarta Sans','Amiri','Cairo','Tajawal','Almarai','Changa','El Messiri','Reem Kufi','Noto Naskh Arabic','IBM Plex Sans Arabic','Readex Pro','Lalezar','Rakkas','Harmattan'];
-views.design=()=>{const c=th.colors||{},f=th.fonts||{};return `<div class="bar"><h2>Design</h2><small class="mu">Changes show live on the right. Press Save to publish them.</small><button class="btn" data-a="dsave">Save design</button><button class="btn g s" data-a="dreset">Reset to original</button></div>
- <div class="studio"><div id="dpanel"><div class="card sec"><h3>Colors</h3>${DCOL.map(([k,l,d])=>`<div class="row" style="margin:0 0 8px"><input type="color" data-dc="${k}" value="${esc(c[k]||d)}" style="width:50px;height:38px;padding:2px;margin:0;flex:none"><input type="text" data-dx="${k}" value="${esc((c[k]||d).toUpperCase())}" maxlength="7" spellcheck="false" placeholder="#C5A880" style="width:100px;margin:0;font-family:monospace;text-transform:uppercase"><span class="mu" style="flex:1">${l}</span><button class="btn g s" data-a="dcreset" data-id="${k}" title="Back to original">↺</button></div>`).join('')}</div>
+let ds=[],dact='',dcur=null,dinit=false;
+const dById=id=>ds.find(x=>x.id===id);
+const dHas=v=>v&&(Object.keys(v.colors||{}).length||Object.keys(v.fonts||{}).length);
+const dEditor=v=>{v=v||{};const c=v.colors||{},f=v.fonts||{},cp=dcur&&dById(dcur);return `<p class="mu" style="margin:0 0 10px">Editing: <b style="color:var(--tx)">${cp?esc(cp.name):'a new, unsaved design'}</b></p>
+ <div class="card sec"><h3>Colors</h3>${DCOL.map(([k,l,d])=>`<div class="row" style="margin:0 0 8px"><input type="color" data-dc="${k}" value="${esc(c[k]||d)}" style="width:50px;height:38px;padding:2px;margin:0;flex:none"><input type="text" data-dx="${k}" value="${esc((c[k]||d).toUpperCase())}" maxlength="7" spellcheck="false" placeholder="#C5A880" style="width:100px;margin:0;font-family:monospace;text-transform:uppercase"><span class="mu" style="flex:1">${l}</span><button class="btn g s" data-a="dcreset" data-id="${k}" title="Back to original">↺</button></div>`).join('')}</div>
  <div class="card sec"><h3>Fonts</h3><p class="mu" style="margin:0 0 8px">Type the exact name of any font from fonts.google.com. Leave empty for the original font.</p>
- ${DFONT.map(([k,l,d])=>`<label>${l}<input data-df="${k}" list="gfonts" value="${esc(f[k]||'')}" placeholder="${d}" autocomplete="off"></label>`).join('')}<datalist id="gfonts">${GFONTS.map(x=>`<option value="${x}">`).join('')}</datalist></div></div>
+ ${DFONT.map(([k,l,d])=>`<label>${l}<input data-df="${k}" list="gfonts" value="${esc(f[k]||'')}" placeholder="${d}" autocomplete="off"></label>`).join('')}<datalist id="gfonts">${GFONTS.map(x=>`<option value="${x}">`).join('')}</datalist></div>`};
+const dList=()=>{const row=(id,name,v,extra)=>`<div class="row" style="margin:0 0 8px"><b>${esc(name)}</b>${(id==='orig'?!dact:dact===id)?'<span class="tag confirmed">live on website</span>':''}${dcur===id||(id==='orig'&&dcur===null&&false)?'<span class="tag new">editing</span>':''}<span class="mu"></span>${extra}</div>`;
+ return `<h3>My designs</h3><p class="mu" style="margin:0 0 10px">Save as many designs as you like and pick which one is live. The live one is what visitors see.</p>`+
+ row('orig','Original design',null,`<button class="btn g s" data-a="dedit" data-id="orig">View</button>${dact?'<button class="btn s" data-a="duse" data-id="orig">Use on website</button>':''}`)+
+ ds.map(x=>row(x.id,x.name,x,`<button class="btn g s" data-a="dedit" data-id="${esc(x.id)}">Edit</button>${dact===x.id?'':`<button class="btn s" data-a="duse" data-id="${esc(x.id)}">Use on website</button>`}<button class="btn g s" data-a="ddup" data-id="${esc(x.id)}">Duplicate</button><button class="btn g s" data-a="dren" data-id="${esc(x.id)}">Rename</button><button class="btn r s" data-a="ddel" data-id="${esc(x.id)}">Delete</button>`)).join('')+
+ (!ds.length&&dHas(th)?'<button class="btn g s" data-a="dimport">Save the current live design as a preset</button>':'')};
+views.design=()=>{if(!dinit){dinit=true;dcur=dact&&dById(dact)?dact:null}const cp=dcur&&dById(dcur);
+ return `<div class="bar"><h2>Design</h2><small class="mu">Changes show live on the right. Nothing reaches visitors until you press Use on website.</small><button class="btn" data-a="dsave">${cp?'Save changes':'Save as new design'}</button>${cp?'<button class="btn g" data-a="dnew">Save as new design</button>':''}</div>
+ <div class="studio"><div id="dpanel"><div class="card sec" id="dlist">${dList()}</div><div id="deditor">${dEditor(cp||(dcur===null&&!ds.length?th:null))}</div></div>
  <iframe id="dfr" src="index.html?fekra-design=1"></iframe></div>`};
 const dCollect=()=>{const colors={},fonts={};document.querySelectorAll('[data-dc]').forEach(i=>{const d=DCOL.find(x=>x[0]===i.dataset.dc)[2];if(i.value.toLowerCase()!==d.toLowerCase())colors[i.dataset.dc]=i.value});
  document.querySelectorAll('[data-df]').forEach(i=>{const v=i.value.trim();if(v)fonts[i.dataset.df]=v});return{colors,fonts}};
+const dId=n=>(slug(n)||'design')+'-'+Math.random().toString(36).slice(2,6);
+const saveDs=(list,active)=>db.collection('content').doc('designs').set({list,active:active===undefined?dact:active,updatedBy:me.username});
+const publish=p=>dHas(p)?db.collection('content').doc('theme').set({colors:p.colors||{},fonts:p.fonts||{},updatedBy:me.username}):db.collection('content').doc('theme').delete();
+const dRefresh=()=>{const l=$('#dlist');if(l)l.innerHTML=dList();const b=document.querySelector('[data-a=dsave]');if(b)b.textContent=dcur&&dById(dcur)?'Save changes':'Save as new design'};
+async function dNew(){const n=prompt('Name for this design','My design');if(!n||!n.trim())return;const v=dCollect(),id=dId(n);
+ try{await saveDs([...ds,{id,name:n.trim(),...v}]);dcur=id;$('#deditor').firstElementChild.innerHTML='Editing: <b style="color:var(--tx)">'+esc(n.trim())+'</b>';dRefresh();toast('Design saved. Press Use on website to make it live.')}catch(x){fail(x)}}
+async function dSave(){if(!dcur||!dById(dcur))return dNew();const v=dCollect();
+ try{await saveDs(ds.map(x=>x.id===dcur?{...x,...v}:x));if(dcur===dact)await publish(v);toast(dcur===dact?'Saved. This design is live, so visitors see the change.':'Saved. Press Use on website to make it live.')}catch(x){fail(x)}}
 let dT;const dSend=()=>{clearTimeout(dT);dT=setTimeout(()=>{const f=$('#dfr');try{f&&f.contentWindow.postMessage({src:'fekra-admin',type:'theme',theme:dCollect()},location.origin)}catch(x){}},120)};
 async function saveChartEdit(m){if(!can('garments'))return toast('You do not have permission to edit the size chart.');
  try{if(!grs.length)await seedG();const base=grs.find(x=>x.id===m.gid)||DEF_GARMENTS.find(x=>x.id===m.gid);if(!base)throw Error('Garment not found');
@@ -341,8 +361,13 @@ const acts={tab:(id)=>go(id),close:closeM,out:()=>auth.signOut(),
  paddcol:()=>$('#pcols').insertAdjacentHTML('beforeend',colRow({})),pdelcol:(id,t)=>t.closest('.pcr').remove(),
  coledit:id=>colform(cols.find(c=>c.id===id)||{}),
  dcreset:id=>{const i=document.querySelector('[data-dc="'+id+'"]');i.value=DCOL.find(x=>x[0]===id)[2];const x=document.querySelector('[data-dx="'+id+'"]');if(x)x.value=i.value.toUpperCase();dSend()},
- dsave:()=>db.collection('content').doc('theme').set({...dCollect(),updatedBy:me.username}).then(()=>toast('Design saved. Visitors see it on their next visit.')).catch(fail),
- dreset:()=>confirm('Go back to the original colors and fonts?')&&db.collection('content').doc('theme').delete().then(()=>{th={};render();toast('Reset to original')}).catch(fail),
+ dedit:id=>{dcur=id==='orig'?null:id;const p=dById(dcur);$('#deditor').innerHTML=dEditor(p||{});dRefresh();dSend()},
+ dsave:()=>dSave(),dnew:()=>dNew(),
+ duse:async id=>{try{const p=id==='orig'?null:dById(id);await publish(p);await saveDs(ds,id==='orig'?'':id);toast(p?'"'+p.name+'" is now live':'Original design is now live')}catch(x){fail(x)}},
+ ddup:id=>{const p=dById(id),n=prompt('Name for the copy',p.name+' copy');if(n)saveDs([...ds,{...JSON.parse(JSON.stringify(p)),id:dId(n),name:n.trim()}]).then(()=>toast('Duplicated')).catch(fail)},
+ dren:id=>{const p=dById(id),n=prompt('New name',p.name);if(n&&n.trim())saveDs(ds.map(x=>x.id===id?{...x,name:n.trim()}:x)).then(()=>{toast('Renamed');if(dcur===id)$('#deditor').innerHTML=dEditor(dCollect())}).catch(fail)},
+ ddel:id=>{const p=dById(id);if(!confirm('Delete the design "'+p.name+'"?'+(dact===id?' It is live right now: the website keeps looking the same until you pick another design.':'')))return;if(dcur===id)dcur=null;saveDs(ds.filter(x=>x.id!==id),dact===id?'':dact).then(()=>toast('Deleted')).catch(fail)},
+ dimport:()=>{const n=prompt('Name for the current live design','My design');if(n)saveDs([{id:dId(n),name:n.trim(),colors:th.colors||{},fonts:th.fonts||{}}],'').then(()=>toast('Saved as a preset')).catch(fail)},
  gedit:id=>gform(grs.find(g=>g.id===id)||{}),
  gaddrow:()=>{gSync();gc.rows.push(gc.cols.map(()=>''));gDraw()},
  gdelrow:id=>{gSync();gc.rows.splice(+id,1);gDraw()},
