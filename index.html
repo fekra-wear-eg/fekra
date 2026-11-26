@@ -28,17 +28,17 @@
             theme: {
                 extend: {
                     colors: {
-                        obsidian: '#0A0A0B',
-                        charcoal: '#131316',
-                        alabaster: '#F4F1EA',
-                        stone: '#A39E93',
-                        champagne: '#C5A880',
-                        champagneDark: '#9E825B',
+                        obsidian: 'rgb(var(--c-obsidian) / <alpha-value>)',
+                        charcoal: 'rgb(var(--c-charcoal) / <alpha-value>)',
+                        alabaster: 'rgb(var(--c-alabaster) / <alpha-value>)',
+                        stone: 'rgb(var(--c-stone) / <alpha-value>)',
+                        champagne: 'rgb(var(--c-champagne) / <alpha-value>)',
+                        champagneDark: 'rgb(var(--c-champagneDark) / <alpha-value>)',
                     },
                     fontFamily: {
-                        serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],
-                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
-                        arabic: ['"Amiri"', 'serif'],
+                        serif: ['var(--f-serif)'],
+                        sans: ['var(--f-sans)'],
+                        arabic: ['var(--f-arabic)'],
                     },
                     letterSpacing: {
                         editorial: '0.28em',
@@ -65,26 +65,31 @@
 
     <style>
         /* Custom Editorial Scrollbar & Selection */
+        :root {
+            --c-obsidian: 10 10 11; --c-charcoal: 19 19 22; --c-alabaster: 244 241 234; --c-stone: 163 158 147; --c-champagne: 197 168 128; --c-champagneDark: 158 130 91;
+            --f-serif: "Cormorant Garamond", Georgia, serif; --f-sans: "Plus Jakarta Sans", sans-serif; --f-arabic: "Amiri", serif;
+            --f-ar-head: "Amiri", "Cairo", serif; --f-ar-body: "Cairo", "Tajawal", sans-serif;
+        }
         ::selection {
-            background-color: #C5A880;
-            color: #0A0A0B;
+            background-color: rgb(var(--c-champagne));
+            color: rgb(var(--c-obsidian));
         }
         ::-webkit-scrollbar {
             width: 5px;
         }
         ::-webkit-scrollbar-track {
-            background: #0A0A0B;
+            background: rgb(var(--c-obsidian));
         }
         ::-webkit-scrollbar-thumb {
             background: #2A2A30;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #C5A880;
+            background: rgb(var(--c-champagne));
         }
 
         /* Subtle Grain Texture Overlay for Editorial Depth */
         .editorial-grain {
-            background-image: radial-gradient(rgba(244, 241, 234, 0.035) 1px, transparent 0);
+            background-image: radial-gradient(rgb(var(--c-alabaster) / 0.035) 1px, transparent 0);
             background-size: 24px 24px;
         }
 
@@ -122,13 +127,41 @@
 [dir=rtl] .text-left{text-align:right}
 @media(min-width:768px){[dir=rtl] .md\:space-x-8>:not([hidden])~:not([hidden]){margin-left:0;margin-right:2rem}}
 @media(min-width:1024px){[dir=rtl] .lg\:pl-4{padding-left:0;padding-right:1rem}[dir=rtl] .lg\:pr-8{padding-right:0;padding-left:2rem}}
-html[lang=ar] body,html[lang=ar] button,html[lang=ar] input,html[lang=ar] textarea,html[lang=ar] select{font-family:'Cairo','Tajawal',sans-serif!important}
-html[lang=ar] .font-serif,html[lang=ar] h1,html[lang=ar] h2,html[lang=ar] h3{font-family:'Amiri','Cairo',serif!important}
+html[lang=ar] body,html[lang=ar] button,html[lang=ar] input,html[lang=ar] textarea,html[lang=ar] select{font-family:var(--f-ar-body)!important}
+html[lang=ar] .font-serif,html[lang=ar] h1,html[lang=ar] h2,html[lang=ar] h3{font-family:var(--f-ar-head)!important}
 html[lang=ar] *{letter-spacing:0!important}
 html[lang=ar] .uppercase{text-transform:none}
 html[lang=ar] em,html[lang=ar] .italic{font-style:normal!important}
 html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
 </style>
+
+    <script>
+    // Site design (colours + fonts) saved in the admin "Design" tab. Applied immediately from a local copy so nothing flashes.
+    (function () {
+        var root = document.documentElement;
+        var FONTS = { serif: ['--f-serif', 'Georgia, serif'], sans: ['--f-sans', 'sans-serif'], arabic: ['--f-arabic', 'serif'], arHead: ['--f-ar-head', 'serif'], arBody: ['--f-ar-body', 'sans-serif'] };
+        var BUILTIN = { 'Cormorant Garamond': 1, 'Plus Jakarta Sans': 1, 'Amiri': 1, 'Cairo': 1, 'Tajawal': 1 };
+        function rgb(h) { var m = /^#?([0-9a-f]{6})$/i.exec(h || ''); if (!m) return null; var n = parseInt(m[1], 16); return (n >> 16) + ' ' + ((n >> 8) & 255) + ' ' + (n & 255); }
+        window.fekraApplyTheme = function (t) {
+            t = t || {}; var c = t.colors || {}, f = t.fonts || {};
+            ['obsidian', 'charcoal', 'alabaster', 'stone', 'champagne', 'champagneDark'].forEach(function (k) {
+                var v = rgb(c[k]); if (v) root.style.setProperty('--c-' + k, v); else root.style.removeProperty('--c-' + k);
+            });
+            var fam = {};
+            Object.keys(FONTS).forEach(function (k) {
+                var name = (k === 'arabic' ? f.arHead : f[k]); name = name && String(name).replace(/["<>;{}]/g, '').trim();
+                if (name) { root.style.setProperty(FONTS[k][0], '"' + name + '", ' + FONTS[k][1]); fam[name] = 1; } else root.style.removeProperty(FONTS[k][0]);
+            });
+            Object.keys(fam).forEach(function (n) {
+                if (BUILTIN[n] || document.querySelector('link[data-tf="' + n + '"]')) return;
+                var l = document.createElement('link'); l.rel = 'stylesheet'; l.setAttribute('data-tf', n);
+                l.href = 'https://fonts.googleapis.com/css?family=' + encodeURIComponent(n).replace(/%20/g, '+') + ':300,400,500,600,700&display=swap';
+                document.head.appendChild(l);
+            });
+        };
+        try { var c = localStorage.getItem('fekra-theme'); if (c) window.fekraApplyTheme(JSON.parse(c)); } catch (e) {}
+    })();
+    </script>
 </head>
 <body class="bg-obsidian text-alabaster font-sans antialiased overflow-x-hidden selection:bg-champagne selection:text-obsidian">
 
@@ -371,10 +404,10 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
                     <div id="threejs-viewport" class="relative aspect-[4/5] w-full rounded-sm border border-white/10 overflow-hidden cursor-grab active:cursor-grabbing select-none touch-none" style="background: linear-gradient(135deg, #c2c3c7 0%, #8a8b90 52%, #48494e 100%);">
                         <!-- Camera Quick Angle & Recenter Buttons -->
                         <div class="absolute top-3 right-3 z-10 flex flex-wrap justify-end gap-1.5">
-                            <button data-ek="ui-cam-front-btn" type="button" id="cam-front-btn" class="px-2.5 py-1 rounded-sm bg-obsidian/85 backdrop-blur-sm border border-white/15 text-[10px] uppercase tracking-widest text-alabaster hover:border-champagne hover:text-champagne transition-colors">Front</button>
-                            <button data-ek="ui-cam-side-btn" type="button" id="cam-side-btn" class="px-2.5 py-1 rounded-sm bg-obsidian/85 backdrop-blur-sm border border-white/15 text-[10px] uppercase tracking-widest text-alabaster hover:border-champagne hover:text-champagne transition-colors">Side</button>
-                            <button data-ek="ui-cam-back-btn" type="button" id="cam-back-btn" class="px-2.5 py-1 rounded-sm bg-obsidian/85 backdrop-blur-sm border border-white/15 text-[10px] uppercase tracking-widest text-alabaster hover:border-champagne hover:text-champagne transition-colors">Back</button>
-                            <button data-ek="ui-cam-center-btn" type="button" id="cam-center-btn" title="Recenter 3D Model" class="px-2.5 py-1 rounded-sm bg-obsidian/85 backdrop-blur-sm border border-champagne/50 text-[10px] uppercase tracking-widest text-champagne hover:bg-champagne hover:text-obsidian transition-colors">Center</button>
+                            <button type="button" id="cam-front-btn" class="px-2.5 py-1 rounded-sm bg-obsidian/85 backdrop-blur-sm border border-white/15 text-[10px] uppercase tracking-widest text-alabaster hover:border-champagne hover:text-champagne transition-colors">Front</button>
+                            <button type="button" id="cam-side-btn" class="px-2.5 py-1 rounded-sm bg-obsidian/85 backdrop-blur-sm border border-white/15 text-[10px] uppercase tracking-widest text-alabaster hover:border-champagne hover:text-champagne transition-colors">Side</button>
+                            <button type="button" id="cam-back-btn" class="px-2.5 py-1 rounded-sm bg-obsidian/85 backdrop-blur-sm border border-white/15 text-[10px] uppercase tracking-widest text-alabaster hover:border-champagne hover:text-champagne transition-colors">Back</button>
+                            <button type="button" id="cam-center-btn" title="Recenter 3D Model" class="px-2.5 py-1 rounded-sm bg-obsidian/85 backdrop-blur-sm border border-champagne/50 text-[10px] uppercase tracking-widest text-champagne hover:bg-champagne hover:text-obsidian transition-colors">Center</button>
                         </div>
 
                         <!-- Gesture Hint Pill -->
@@ -389,9 +422,9 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
                         <div class="flex items-center justify-between gap-2">
                             <span class="text-[11px] uppercase tracking-editorial text-champagne">Transform: <span id="active-transform-zone-label" class="text-alabaster">Front Print</span></span>
                             <div class="flex items-center gap-2">
-                                <button data-ek="ui-target-front-transform-btn" type="button" id="target-front-transform-btn" class="px-2 py-0.5 rounded-sm border border-champagne bg-champagne/15 text-[9px] uppercase tracking-widest text-champagne">Front</button>
-                                <button data-ek="ui-target-back-transform-btn" type="button" id="target-back-transform-btn" class="px-2 py-0.5 rounded-sm border border-white/15 text-[9px] uppercase tracking-widest text-stone hover:text-alabaster">Back</button>
-                                <button data-ek="ui-reset-print-btn" type="button" id="reset-print-btn" class="text-[10px] uppercase tracking-widest text-stone hover:text-champagne underline ml-1">Reset</button>
+                                <button type="button" id="target-front-transform-btn" class="px-2 py-0.5 rounded-sm border border-champagne bg-champagne/15 text-[9px] uppercase tracking-widest text-champagne">Front</button>
+                                <button type="button" id="target-back-transform-btn" class="px-2 py-0.5 rounded-sm border border-white/15 text-[9px] uppercase tracking-widest text-stone hover:text-alabaster">Back</button>
+                                <button type="button" id="reset-print-btn" class="text-[10px] uppercase tracking-widest text-stone hover:text-champagne underline ml-1">Reset</button>
                             </div>
                         </div>
 
@@ -405,14 +438,14 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
                                     <span data-ek="bespoke-studio-6">Move X</span>
                                     <span id="val-pos-x" class="text-alabaster">0%</span>
                                 </div>
-                                <input type="range" id="ctrl-pos-x" min="-38" max="38" value="0" class="w-full accent-[#C5A880] cursor-pointer" />
+                                <input type="range" id="ctrl-pos-x" min="-38" max="38" value="0" class="w-full accent-champagne cursor-pointer" />
                             </div>
                             <div>
                                 <div class="flex justify-between text-[10px] uppercase tracking-wider text-stone mb-1">
                                     <span data-ek="bespoke-studio-7">Move Y</span>
                                     <span id="val-pos-y" class="text-alabaster">6%</span>
                                 </div>
-                                <input type="range" id="ctrl-pos-y" min="-42" max="36" value="6" class="w-full accent-[#C5A880] cursor-pointer" />
+                                <input type="range" id="ctrl-pos-y" min="-42" max="36" value="6" class="w-full accent-champagne cursor-pointer" />
                             </div>
                         </div>
 
@@ -423,14 +456,14 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
                                     <span data-ek="bespoke-studio-8">Resize</span>
                                     <span id="val-scale" class="text-alabaster">100%</span>
                                 </div>
-                                <input type="range" id="ctrl-scale" min="10" max="400" value="100" class="w-full accent-[#C5A880] cursor-pointer" />
+                                <input type="range" id="ctrl-scale" min="10" max="400" value="100" class="w-full accent-champagne cursor-pointer" />
                             </div>
                             <div>
                                 <div class="flex justify-between text-[10px] uppercase tracking-wider text-stone mb-1">
                                     <span data-ek="bespoke-studio-9">Rotate</span>
                                     <span id="val-rot" class="text-alabaster">0°</span>
                                 </div>
-                                <input type="range" id="ctrl-rot" min="-180" max="180" value="0" class="w-full accent-[#C5A880] cursor-pointer" />
+                                <input type="range" id="ctrl-rot" min="-180" max="180" value="0" class="w-full accent-champagne cursor-pointer" />
                             </div>
                         </div>
                         </div>
@@ -475,14 +508,14 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
                             </label>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <label class="flex items-start gap-3 p-4 rounded-sm bg-obsidian border border-champagne/40 cursor-pointer hover:border-champagne transition-colors">
-                                    <input type="checkbox" id="zone-front-check" checked class="mt-0.5 w-4 h-4 accent-[#C5A880] cursor-pointer" />
+                                    <input type="checkbox" id="zone-front-check" checked class="mt-0.5 w-4 h-4 accent-champagne cursor-pointer" />
                                     <div>
                                         <span data-ek="bespoke-form-5" class="text-xs uppercase tracking-widest text-alabaster font-medium block">Front Print</span>
                                         <span data-ek="bespoke-form-6" class="text-[11px] text-stone block mt-0.5">Custom Text or Freehand Drawing</span>
                                     </div>
                                 </label>
                                 <label class="flex items-start gap-3 p-4 rounded-sm bg-obsidian border border-white/15 cursor-pointer hover:border-champagne transition-colors">
-                                    <input type="checkbox" id="zone-back-check" class="mt-0.5 w-4 h-4 accent-[#C5A880] cursor-pointer" />
+                                    <input type="checkbox" id="zone-back-check" class="mt-0.5 w-4 h-4 accent-champagne cursor-pointer" />
                                     <div>
                                         <span data-ek="bespoke-form-7" class="text-xs uppercase tracking-widest text-alabaster font-medium block">Back Print</span>
                                         <span data-ek="bespoke-form-8" class="text-[11px] text-stone block mt-0.5">Upload Photo / Artwork</span>
@@ -499,9 +532,9 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
                                     <p data-ek="front-zone-panel-2" class="text-[11px] text-stone mt-0.5">Choose custom typography, sketch on the pad, or upload your own photo or artwork.</p>
                                 </div>
                                 <div class="inline-flex rounded-sm border border-white/15 overflow-hidden shrink-0">
-                                    <button data-ek="ui-front-mode-text-btn" type="button" id="front-mode-text-btn" class="px-3.5 py-2 bg-champagne text-obsidian text-[11px] uppercase tracking-widest font-medium transition-colors">Text</button>
-                                    <button data-ek="ui-front-mode-draw-btn" type="button" id="front-mode-draw-btn" class="px-3.5 py-2 bg-charcoal text-alabaster text-[11px] uppercase tracking-widest hover:text-champagne transition-colors">Draw</button>
-                                    <button data-ek="ui-front-mode-photo-btn" type="button" id="front-mode-photo-btn" class="px-3.5 py-2 bg-charcoal text-alabaster text-[11px] uppercase tracking-widest hover:text-champagne transition-colors">Photo</button>
+                                    <button type="button" id="front-mode-text-btn" class="px-3.5 py-2 bg-champagne text-obsidian text-[11px] uppercase tracking-widest font-medium transition-colors">Text</button>
+                                    <button type="button" id="front-mode-draw-btn" class="px-3.5 py-2 bg-charcoal text-alabaster text-[11px] uppercase tracking-widest hover:text-champagne transition-colors">Draw</button>
+                                    <button type="button" id="front-mode-photo-btn" class="px-3.5 py-2 bg-charcoal text-alabaster text-[11px] uppercase tracking-widest hover:text-champagne transition-colors">Photo</button>
                                 </div>
                             </div>
 
@@ -660,7 +693,7 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
                                 <p data-ek="front-photo-controls-1" class="text-[11px] text-stone">Upload a photo or artwork (PNG with a transparent background prints best). Then drag it on the 3D garment to place it.</p>
                                 <div class="flex flex-wrap items-center gap-3">
                                     <label data-ek="front-photo-controls-2" for="front-photo-input" class="cursor-pointer px-4 py-2.5 rounded-sm bg-champagne text-obsidian text-[11px] uppercase tracking-widest font-medium hover:bg-alabaster transition-colors">Choose Image</label>
-                                    <button data-ek="ui-remove-front-photo-btn" type="button" id="remove-front-photo-btn" class="hidden text-[11px] uppercase tracking-widest text-stone hover:text-champagne underline">Remove</button>
+                                    <button type="button" id="remove-front-photo-btn" class="hidden text-[11px] uppercase tracking-widest text-stone hover:text-champagne underline">Remove</button>
                                 </div>
                                 <input type="file" id="front-photo-input" accept="image/*" class="hidden" />
                             </div>
@@ -676,9 +709,9 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
                                     <div class="flex items-center gap-3">
                                         <label class="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-stone">
                                             <span data-ek="front-draw-controls-2">Size</span>
-                                            <input type="range" id="draw-brush-size" min="2" max="18" value="5" class="w-16 accent-[#C5A880] cursor-pointer" />
+                                            <input type="range" id="draw-brush-size" min="2" max="18" value="5" class="w-16 accent-champagne cursor-pointer" />
                                         </label>
-                                        <button data-ek="ui-clear-draw-btn" type="button" id="clear-draw-btn" class="px-2.5 py-1 rounded-sm border border-white/20 text-[10px] uppercase tracking-widest text-stone hover:text-champagne transition-colors">Clear Pad</button>
+                                        <button type="button" id="clear-draw-btn" class="px-2.5 py-1 rounded-sm border border-white/20 text-[10px] uppercase tracking-widest text-stone hover:text-champagne transition-colors">Clear Pad</button>
                                     </div>
                                 </div>
                                 <div class="rounded-sm border border-white/15 bg-[#19191d] overflow-hidden">
@@ -1081,11 +1114,11 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
     <div id="custom-submit-modal" class="fixed inset-0 z-[60] hidden items-center justify-center px-6 bg-obsidian/85 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="custom-submit-title">
         <div class="max-w-md w-full bg-charcoal border border-champagne/50 rounded-sm p-8 text-center shadow-2xl">
             <span data-ek="custom-submit-modal-1" class="font-arabic text-3xl text-champagne block mb-2">فكرتك وصلت</span>
-            <h4 data-ek="ui-custom-submit-title" id="custom-submit-title" class="font-serif text-2xl text-alabaster mb-3">Your Fekra Is In</h4>
+            <h4 id="custom-submit-title" class="font-serif text-2xl text-alabaster mb-3">Your Fekra Is In</h4>
             <p id="custom-submit-text" class="text-sm text-stone font-light leading-relaxed mb-6"></p>
             <div class="flex flex-col sm:flex-row gap-3">
-                <button data-ek="ui-custom-submit-bag-btn" type="button" id="custom-submit-bag-btn" class="flex-1 py-3.5 rounded-sm bg-champagne text-obsidian text-xs uppercase tracking-editorial font-medium hover:bg-alabaster transition-colors">Go To My Bag</button>
-                <button data-ek="ui-custom-submit-close-btn" type="button" id="custom-submit-close-btn" class="flex-1 py-3.5 rounded-sm border border-white/20 text-alabaster text-xs uppercase tracking-editorial hover:border-champagne hover:text-champagne transition-colors">Keep Designing</button>
+                <button type="button" id="custom-submit-bag-btn" class="flex-1 py-3.5 rounded-sm bg-champagne text-obsidian text-xs uppercase tracking-editorial font-medium hover:bg-alabaster transition-colors">Go To My Bag</button>
+                <button type="button" id="custom-submit-close-btn" class="flex-1 py-3.5 rounded-sm border border-white/20 text-alabaster text-xs uppercase tracking-editorial hover:border-champagne hover:text-champagne transition-colors">Keep Designing</button>
             </div>
         </div>
     </div>
@@ -1117,7 +1150,7 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
                 <span data-ek="cart-drawer-3" class="text-xs uppercase tracking-widest text-stone">Subtotal</span>
                 <span id="cart-subtotal" class="font-serif text-2xl text-alabaster">EGP 0</span>
             </div>
-            <button data-ek="ui-checkout-btn" id="checkout-btn" class="w-full py-4 rounded-sm bg-champagne text-obsidian text-xs uppercase tracking-editorial font-medium hover:bg-alabaster transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+            <button id="checkout-btn" class="w-full py-4 rounded-sm bg-champagne text-obsidian text-xs uppercase tracking-editorial font-medium hover:bg-alabaster transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                 Complete Order
             </button>
         </div>
@@ -1131,7 +1164,7 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
 
             <!-- Step 1: delivery details -->
             <form id="checkout-form" novalidate>
-                <h4 data-ek="ui-checkout-title" id="checkout-title" class="font-serif text-2xl text-alabaster mb-1">Delivery Details</h4>
+                <h4 id="checkout-title" class="font-serif text-2xl text-alabaster mb-1">Delivery Details</h4>
                 <p data-ek="checkout-form-1" class="text-xs text-stone mb-5">We confirm every order with you on WhatsApp before anything is made or shipped.</p>
 
                 <div class="space-y-4">
@@ -1149,9 +1182,9 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
                     <fieldset>
                         <legend data-ek="checkout-form-7" class="text-[11px] uppercase tracking-widest text-stone block mb-1.5">How would you like to pay?</legend>
                         <div class="space-y-2" id="co-payment">
-                            <label class="flex items-center gap-3 p-3 border border-white/15 rounded-sm cursor-pointer hover:border-champagne/60"><input type="radio" name="co-pay" value="cod" checked class="accent-[#C5A880]" /><span data-ek="co-payment-1" class="text-sm text-alabaster">Cash on delivery</span></label>
-                            <label class="flex items-center gap-3 p-3 border border-white/15 rounded-sm cursor-pointer hover:border-champagne/60"><input type="radio" name="co-pay" value="instapay" class="accent-[#C5A880]" /><span data-ek="co-payment-2" class="text-sm text-alabaster">InstaPay</span></label>
-                            <label class="flex items-center gap-3 p-3 border border-white/15 rounded-sm cursor-pointer hover:border-champagne/60"><input type="radio" name="co-pay" value="vodafone" class="accent-[#C5A880]" /><span data-ek="co-payment-3" class="text-sm text-alabaster">Vodafone Cash</span></label>
+                            <label class="flex items-center gap-3 p-3 border border-white/15 rounded-sm cursor-pointer hover:border-champagne/60"><input type="radio" name="co-pay" value="cod" checked class="accent-champagne" /><span data-ek="co-payment-1" class="text-sm text-alabaster">Cash on delivery</span></label>
+                            <label class="flex items-center gap-3 p-3 border border-white/15 rounded-sm cursor-pointer hover:border-champagne/60"><input type="radio" name="co-pay" value="instapay" class="accent-champagne" /><span data-ek="co-payment-2" class="text-sm text-alabaster">InstaPay</span></label>
+                            <label class="flex items-center gap-3 p-3 border border-white/15 rounded-sm cursor-pointer hover:border-champagne/60"><input type="radio" name="co-pay" value="vodafone" class="accent-champagne" /><span data-ek="co-payment-3" class="text-sm text-alabaster">Vodafone Cash</span></label>
                         </div>
                         <p id="co-pay-hint" class="text-[11px] text-stone mt-2 hidden">We will send you the payment details on WhatsApp when we confirm your order.</p>
                     </fieldset>
@@ -1171,8 +1204,8 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
                 <h4 data-ek="checkout-done-2" class="font-serif text-2xl text-alabaster mb-1">Order Received</h4>
                 <p class="text-xs uppercase tracking-widest text-champagne mb-4">Order <span id="co-done-id"></span></p>
                 <p id="co-done-text" class="text-sm text-stone font-light leading-relaxed mb-6"></p>
-                <a data-ek="ui-co-done-wa" id="co-done-wa" href="#" target="_blank" rel="noopener" class="block w-full py-4 rounded-sm bg-champagne text-obsidian text-xs uppercase tracking-editorial font-medium hover:bg-alabaster transition-colors mb-3">Send Order On WhatsApp</a>
-                <button data-ek="ui-co-done-close" type="button" id="co-done-close" class="w-full py-3.5 rounded-sm border border-white/20 text-alabaster text-xs uppercase tracking-editorial hover:border-champagne hover:text-champagne transition-colors">Back To The Site</button>
+                <a id="co-done-wa" href="#" target="_blank" rel="noopener" class="block w-full py-4 rounded-sm bg-champagne text-obsidian text-xs uppercase tracking-editorial font-medium hover:bg-alabaster transition-colors mb-3">Send Order On WhatsApp</a>
+                <button type="button" id="co-done-close" class="w-full py-3.5 rounded-sm border border-white/20 text-alabaster text-xs uppercase tracking-editorial hover:border-champagne hover:text-champagne transition-colors">Back To The Site</button>
             </div>
         </div>
     </div>
@@ -1197,7 +1230,7 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
             CURRENCY: 'EGP',
             SHIPPING_FEE: 0                   // flat delivery fee added at checkout (0 = confirmed with the customer on WhatsApp)
         };
-        const money = (n) => `${tx('currency')} ${Number(n).toLocaleString()}`;
+        const money = (n) => `${FEKRA_CONFIG.CURRENCY} ${Number(n).toLocaleString()}`;
 
         // Apply the contact settings everywhere on the page (links and visible text)
         function applyContactSettings() {
@@ -1380,52 +1413,11 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
         }
         // ===== Language (EN / AR) + admin-editable text =====
         // Every static text block carries data-ek="key". Arabic comes from AR_TEXT; admin edits come from the database.
-        const AR_TEXT = {"navbar-1": "البداية", "navbar-2": "المجموعات", "navbar-3": "جدول المقاسات", "navbar-6": "اصنع فكرتك", "navbar-7": "عن فكرة والسياسات", "open-cart-btn-1": "الحقيبة", "mobile-menu-2": "01. البداية", "mobile-menu-3": "06. اصنع فكرتك", "mobile-menu-4": "07. جدول المقاسات", "mobile-menu-5": "08. عن فكرة، الاسترجاع والتواصل", "mobile-menu-6": "القاهرة — أسسها شريكان", "mobile-menu-7": "علامة مصرية محلية", "page-2": "إحساس تلبسه", "page-3": "كل أيقونة تبدأ<br> <span class=\"italic font-normal text-champagne\">بفكرة عابرة.</span>", "page-4": "وُلدت من شرارة عفوية بين شريكين في الجيم. مجموعات مبنية على لحظات حقيقية، واستوديو مفتوح يتحول فيه إحساسك إلى قطعة تلبسها.", "page-5": "استكشف الفصول", "page-6": "اصنع فكرتك", "page-7": "مرّر", "origin-1": "كيف بدأت &bull; الشرارة", "origin-2": "<span class=\"font-arabic text-champagne text-5xl sm:text-6xl block mb-2\">مجرد فِـكـرة</span> لم تبدأ في قاعة اجتماعات. بدأت بين التمارين في الجيم.", "origin-3": "قبل الإصدار الأول، وقبل العلامات والإصدارات المرقّمة، كانت <strong class=\"text-alabaster font-normal\">فكرة</strong> مجرد حديث عفوي في الجيم بين شريكين.", "origin-4": "كان لدى أحدهما أرشيف من التصاميم الشخصية الخام صنعه مع الوقت — رسومات ومشاعر وكلمات أغانٍ وذكريات لم يمسها أحد. وبينما يقفان بين التمارين، أدركا معًا: <em>كل عمل فني عظيم يبدأ كفكرة عابرة غير مكتوبة في رأس أحدهم.</em>", "origin-5": "بدلًا من إصدار رسومات عشوائية، رتّبا ذلك الأرشيف في <strong class=\"text-alabaster font-normal\">فصول مميزة</strong> — يحمل كل فصل اسم الشرارة الإنسانية التي أوجدته. واليوم تعيش تلك اللحظات الخام على تيشيرتات وهوديز يمكنك ارتداؤها فعلًا.", "origin-6": "بوكسي", "origin-7": "تيشيرتات وهوديز", "origin-8": "قصّة مريحة وواسعة", "origin-9": "الفصول", "origin-10": "وُلدت من شرارات حقيقية", "origin-11": "1 من 1", "origin-12": "الإبداع المشترك", "origin-13": "نصنعها معك", "collections-1": "الأرشيف", "collections-2": "كل شرارة، لها فصلها", "category-filters-1": "كل الفصول", "bespoke-studio-1": "الاستوديو المفتوح", "bespoke-studio-2": "فكرتك — <span class=\"italic text-champagne\">استوديو الإبداع المشترك</span>", "bespoke-studio-3": "ليست مجموعة موسمية — بل دعوة. هاتِ لنا إحساسًا عابرًا، أو كلمات علقت في ذهنك، أو رسمة من دفترك، أو تاريخًا يستحق أن يُخلَّد. يتعاون فريق التصميم معك مباشرةً لصنع قطعة فريدة تحبها حقًا.", "bespoke-studio-4": "استوديو ثلاثي الأبعاد تفاعلي", "bespoke-studio-5": "ضبط دقيق بالمنزلقات (اختياري)", "bespoke-studio-6": "تحريك أفقي", "bespoke-studio-7": "تحريك رأسي", "bespoke-studio-8": "تغيير الحجم", "bespoke-studio-9": "تدوير", "bespoke-form-1": "01. لون القطعة الأساسي", "bespoke-form-2": "02. المقاس", "bespoke-form-3": "جدول المقاسات", "bespoke-form-4": "03. مناطق الطباعة (اختر واحدة أو كلتيهما)", "bespoke-form-5": "طباعة الأمام", "bespoke-form-6": "نص مخصص أو رسم حر أو صورة", "bespoke-form-7": "طباعة الخلف", "bespoke-form-8": "ارفع صورة / عملًا فنيًا", "front-zone-panel-1": "04A. طباعة الأمام — نص أو رسم أو صورة", "front-zone-panel-2": "اختر خطًا مخصصًا، أو ارسم على اللوحة، أو ارفع صورتك أو عملك الفني.", "front-text-controls-1": "نص / كلمات الطباعة الأمامية (إنجليزي وعربي)", "front-text-controls-2": "لون الحبر", "front-text-controls-3": "نمط الخط", "front-text-controls-4": "قائمة الخطوط والمعاينة المباشرة", "front-text-controls-5": "اضغط على أي خط لتطبيقه", "front-photo-controls-1": "ارفع صورة أو عملًا فنيًا (يُفضّل PNG بخلفية شفافة). ثم اسحبها على القطعة ثلاثية الأبعاد لتضعها.", "front-photo-controls-2": "اختر صورة", "front-draw-controls-1": "حبر الفرشاة:", "front-draw-controls-2": "الحجم", "front-draw-controls-3": "ارسم بالماوس أو بإصبعك — يظهر رسمك مباشرةً على أمام التيشيرت.", "back-zone-panel-1": "04B. طباعة الخلف — أضف صورة / عملًا فنيًا", "back-zone-panel-2": "ارفع صورة أو رسمًا لطباعته على ظهر القطعة، ثم اسحبه وغيّر حجمه وأدره.", "back-zone-panel-3": "أضف صورة للخلف", "bespoke-form-9": "اسمك", "bespoke-form-10": "رقم واتساب", "bespoke-confirmation-2": "فكرتك في أيدينا", "size-chart-1": "دليل القصّة والأبعاد", "size-chart-2": "جدول مقاسات القطع", "size-chart-tabs-1": "تيشيرتات بقصّة بوكسي", "size-chart-tabs-2": "هوديز بقصّة بوكسي", "size-chart-3": "المقاس", "size-chart-4": "عرض الصدر (سم)", "size-chart-5": "طول الجسم (سم)", "size-chart-6": "عرض الكتف (سم)", "size-chart-7": "طول الكم (سم)", "size-chart-8": "* تُقاس القياسات والقطعة مسطّحة (هامش ±1 سم).", "size-chart-9": "العناية: اغسل بالماء البارد والقطعة مقلوبة &bull; لا تكوِ مباشرةً فوق الطباعة البارزة أو السيلك سكرين.", "about-policies-2": "عن فكرة والتواصل", "about-policies-3": "صُنعت في القاهرة. مبنية على لحظات حقيقية.", "about-policies-4": "فكرة علامة مصرية محلية بدأت بحديث في الجيم بين شريكين. نحوّل الرسومات والأغاني والمشاعر إلى قطع تلبسها، تُصنع بكميات صغيرة في القاهرة.", "about-policies-5": "عندك سؤال عن المقاسات أو تتبّع طلبك أو تريد تحويل فكرة مخصصة إلى واقع؟ تواصل مع فريقنا مباشرةً على واتساب أو إنستجرام.", "about-policies-6": "خدمة عملاء واتساب", "about-policies-7": "أرشيف إنستجرام", "about-policies-9": "رعاية العملاء والضمانات", "about-policies-10": "سياسة الاسترجاع والاستبدال", "about-policies-11": "مهلة 14 يومًا للاستبدال والاسترجاع", "about-policies-12": "يمكن استبدال القطع غير الملبوسة وغير المغسولة في عبوتها الأصلية وبالبطاقات بمقاس آخر أو إرجاعها خلال <strong class=\"text-alabaster font-normal\">14 يومًا</strong> من التسليم.", "about-policies-13": "تاريخ 7oby المخصص والقطع المخصصة", "about-policies-14": "لأن أطقم <strong class=\"text-alabaster font-normal\">7oby</strong> تُطبع بتاريخ ذكرى مخصص، وقطع <strong class=\"text-alabaster font-normal\">استوديو فكرتك</strong> تُطبع خصيصًا حسب الطلب، فإن القطع المخصصة غير قابلة للاسترجاع إلا إذا وصلت بعيب تصنيع أو طباعة. (أطقم 7oby المطلوبة <em>بدون</em> تاريخ مخصص تظل مؤهلة لاستبدال المقاس خلال 14 يومًا.)", "about-policies-15": "كيف تطلب استبدالًا", "about-policies-16": "راسلنا على واتساب على <strong class=\"text-alabaster font-normal\">+20 100 000 0000</strong> أو عبر رسالة على <strong class=\"text-alabaster font-normal\">@fekra.wear</strong> مع رقم طلبك، وسيرتّب المندوب استلام القطعة من باب بيتك أو تبديل المقاس خلال 48 ساعة.", "page-10": "وُلدت من حديث في الجيم بين شريكين — لنحوّل الرسومات والأغاني والمشاعر وقصص الحب إلى تيشيرتات وهوديز تلبسها.", "page-11": "الفصول", "page-12": "المساعدة والتواصل", "page-13": "قصة البداية", "page-14": "جدول مقاسات القصّة البوكسي", "page-15": "سياسة الاسترجاع والاستبدال", "page-16": "واتساب: +20 100 000 0000", "page-17": "إنستجرام: @fekra.wear", "page-18": "&copy; 2026 فكرة. جميع الحقوق محفوظة.", "page-19": "جدول المقاسات", "page-20": "الاسترجاع", "page-21": "اصنع فكرتك", "modal-single-color-box-1": "اختر اللون", "modal-single-size-box-1": "اختر المقاس", "modal-single-size-box-2": "جدول المقاسات", "modal-duo-size-box-1": "طقم من تيشيرتين — خصّص كل واحد", "modal-duo-size-box-2": "جدول المقاسات", "modal-duo-size-box-3": "معاينة الطقم مباشرةً", "modal-duo-size-box-4": "له", "modal-duo-size-box-5": "لها", "modal-duo-size-box-6": "تيشيرت له — اللون والمقاس", "modal-duo-size-box-7": "تيشيرت لها — اللون والمقاس", "modal-sleeve-date-box-1": "طباعة تاريخ الذكرى / تاريخ مخصص على الكم (اختياري)", "modal-fabric-1": "الطباعة:", "quickview-modal-1": "<strong class=\"text-alabaster font-normal\">المنشأ:</strong> صُنع في القاهرة", "cart-drawer-1": "حقيبتك", "cart-drawer-3": "المجموع الفرعي", "checkout-form-1": "نؤكد كل طلب معك على واتساب قبل التصنيع أو الشحن.", "checkout-form-2": "الاسم بالكامل", "checkout-form-3": "رقم واتساب", "checkout-form-4": "المحافظة", "checkout-form-5": "ملاحظات (اختياري)", "checkout-form-6": "العنوان بالتفصيل", "checkout-form-7": "كيف تفضّل الدفع؟", "checkout-form-8": "الإجمالي", "co-payment-1": "الدفع عند الاستلام", "co-payment-2": "إنستاباي", "co-payment-3": "فودافون كاش", "checkout-done-2": "تم استلام الطلب", "ui-cam-front-btn": "أمام", "ui-cam-side-btn": "جانب", "ui-cam-back-btn": "خلف", "ui-cam-center-btn": "توسيط", "ui-target-front-transform-btn": "الأمام", "ui-target-back-transform-btn": "الخلف", "ui-reset-print-btn": "إعادة ضبط", "ui-front-mode-text-btn": "نص", "ui-front-mode-draw-btn": "رسم", "ui-front-mode-photo-btn": "صورة", "ui-remove-front-photo-btn": "إزالة", "ui-clear-draw-btn": "مسح اللوحة", "ui-custom-submit-bag-btn": "اذهب إلى حقيبتي", "ui-custom-submit-close-btn": "تابع التصميم", "ui-checkout-btn": "إتمام الطلب", "ui-checkout-title": "بيانات التوصيل", "ui-co-done-wa": "أرسل الطلب على واتساب", "ui-co-done-close": "العودة إلى الموقع", "ui-custom-submit-title": "فكرتك وصلت"};
-        const UI_AR = {};
+        const AR_TEXT = {"navbar-1": "البداية", "navbar-2": "المجموعات", "navbar-3": "جدول المقاسات", "navbar-6": "اصنع فكرتك", "navbar-7": "عن فكرة والسياسات", "open-cart-btn-1": "الحقيبة", "mobile-menu-2": "01. البداية", "mobile-menu-3": "06. اصنع فكرتك", "mobile-menu-4": "07. جدول المقاسات", "mobile-menu-5": "08. عن فكرة، الاسترجاع والتواصل", "mobile-menu-6": "القاهرة — أسسها شريكان", "mobile-menu-7": "علامة مصرية محلية", "page-2": "إحساس تلبسه", "page-3": "كل أيقونة تبدأ<br> <span class=\"italic font-normal text-champagne\">بفكرة عابرة.</span>", "page-4": "وُلدت من شرارة عفوية بين شريكين في الجيم. مجموعات مبنية على لحظات حقيقية، واستوديو مفتوح يتحول فيه إحساسك إلى قطعة تلبسها.", "page-5": "استكشف الفصول", "page-6": "اصنع فكرتك", "page-7": "مرّر", "origin-1": "كيف بدأت &bull; الشرارة", "origin-2": "<span class=\"font-arabic text-champagne text-5xl sm:text-6xl block mb-2\">مجرد فِـكـرة</span> لم تبدأ في قاعة اجتماعات. بدأت بين التمارين في الجيم.", "origin-3": "قبل الإصدار الأول، وقبل العلامات والإصدارات المرقّمة، كانت <strong class=\"text-alabaster font-normal\">فكرة</strong> مجرد حديث عفوي في الجيم بين شريكين.", "origin-4": "كان لدى أحدهما أرشيف من التصاميم الشخصية الخام صنعه مع الوقت — رسومات ومشاعر وكلمات أغانٍ وذكريات لم يمسها أحد. وبينما يقفان بين التمارين، أدركا معًا: <em>كل عمل فني عظيم يبدأ كفكرة عابرة غير مكتوبة في رأس أحدهم.</em>", "origin-5": "بدلًا من إصدار رسومات عشوائية، رتّبا ذلك الأرشيف في <strong class=\"text-alabaster font-normal\">فصول مميزة</strong> — يحمل كل فصل اسم الشرارة الإنسانية التي أوجدته. واليوم تعيش تلك اللحظات الخام على تيشيرتات وهوديز يمكنك ارتداؤها فعلًا.", "origin-6": "بوكسي", "origin-7": "تيشيرتات وهوديز", "origin-8": "قصّة مريحة وواسعة", "origin-9": "الفصول", "origin-10": "وُلدت من شرارات حقيقية", "origin-11": "1 من 1", "origin-12": "الإبداع المشترك", "origin-13": "نصنعها معك", "collections-1": "الأرشيف", "collections-2": "كل شرارة، لها فصلها", "category-filters-1": "كل الفصول", "bespoke-studio-1": "الاستوديو المفتوح", "bespoke-studio-2": "فكرتك — <span class=\"italic text-champagne\">استوديو الإبداع المشترك</span>", "bespoke-studio-3": "ليست مجموعة موسمية — بل دعوة. هاتِ لنا إحساسًا عابرًا، أو كلمات علقت في ذهنك، أو رسمة من دفترك، أو تاريخًا يستحق أن يُخلَّد. يتعاون فريق التصميم معك مباشرةً لصنع قطعة فريدة تحبها حقًا.", "bespoke-studio-4": "استوديو ثلاثي الأبعاد تفاعلي", "bespoke-studio-5": "ضبط دقيق بالمنزلقات (اختياري)", "bespoke-studio-6": "تحريك أفقي", "bespoke-studio-7": "تحريك رأسي", "bespoke-studio-8": "تغيير الحجم", "bespoke-studio-9": "تدوير", "bespoke-form-1": "01. لون القطعة الأساسي", "bespoke-form-2": "02. المقاس", "bespoke-form-3": "جدول المقاسات", "bespoke-form-4": "03. مناطق الطباعة (اختر واحدة أو كلتيهما)", "bespoke-form-5": "طباعة الأمام", "bespoke-form-6": "نص مخصص أو رسم حر أو صورة", "bespoke-form-7": "طباعة الخلف", "bespoke-form-8": "ارفع صورة / عملًا فنيًا", "front-zone-panel-1": "04A. طباعة الأمام — نص أو رسم أو صورة", "front-zone-panel-2": "اختر خطًا مخصصًا، أو ارسم على اللوحة، أو ارفع صورتك أو عملك الفني.", "front-text-controls-1": "نص / كلمات الطباعة الأمامية (إنجليزي وعربي)", "front-text-controls-2": "لون الحبر", "front-text-controls-3": "نمط الخط", "front-text-controls-4": "قائمة الخطوط والمعاينة المباشرة", "front-text-controls-5": "اضغط على أي خط لتطبيقه", "front-photo-controls-1": "ارفع صورة أو عملًا فنيًا (يُفضّل PNG بخلفية شفافة). ثم اسحبها على القطعة ثلاثية الأبعاد لتضعها.", "front-photo-controls-2": "اختر صورة", "front-draw-controls-1": "حبر الفرشاة:", "front-draw-controls-2": "الحجم", "front-draw-controls-3": "ارسم بالماوس أو بإصبعك — يظهر رسمك مباشرةً على أمام التيشيرت.", "back-zone-panel-1": "04B. طباعة الخلف — أضف صورة / عملًا فنيًا", "back-zone-panel-2": "ارفع صورة أو رسمًا لطباعته على ظهر القطعة، ثم اسحبه وغيّر حجمه وأدره.", "back-zone-panel-3": "أضف صورة للخلف", "bespoke-form-9": "اسمك", "bespoke-form-10": "رقم واتساب", "bespoke-confirmation-2": "فكرتك في أيدينا", "size-chart-1": "دليل القصّة والأبعاد", "size-chart-2": "جدول مقاسات القطع", "size-chart-tabs-1": "تيشيرتات بقصّة بوكسي", "size-chart-tabs-2": "هوديز بقصّة بوكسي", "size-chart-3": "المقاس", "size-chart-4": "عرض الصدر (سم)", "size-chart-5": "طول الجسم (سم)", "size-chart-6": "عرض الكتف (سم)", "size-chart-7": "طول الكم (سم)", "size-chart-8": "* تُقاس القياسات والقطعة مسطّحة (هامش ±1 سم).", "size-chart-9": "العناية: اغسل بالماء البارد والقطعة مقلوبة &bull; لا تكوِ مباشرةً فوق الطباعة البارزة أو السيلك سكرين.", "about-policies-2": "عن فكرة والتواصل", "about-policies-3": "صُنعت في القاهرة. مبنية على لحظات حقيقية.", "about-policies-4": "فكرة علامة مصرية محلية بدأت بحديث في الجيم بين شريكين. نحوّل الرسومات والأغاني والمشاعر إلى قطع تلبسها، تُصنع بكميات صغيرة في القاهرة.", "about-policies-5": "عندك سؤال عن المقاسات أو تتبّع طلبك أو تريد تحويل فكرة مخصصة إلى واقع؟ تواصل مع فريقنا مباشرةً على واتساب أو إنستجرام.", "about-policies-6": "خدمة عملاء واتساب", "about-policies-7": "أرشيف إنستجرام", "about-policies-9": "رعاية العملاء والضمانات", "about-policies-10": "سياسة الاسترجاع والاستبدال", "about-policies-11": "مهلة 14 يومًا للاستبدال والاسترجاع", "about-policies-12": "يمكن استبدال القطع غير الملبوسة وغير المغسولة في عبوتها الأصلية وبالبطاقات بمقاس آخر أو إرجاعها خلال <strong class=\"text-alabaster font-normal\">14 يومًا</strong> من التسليم.", "about-policies-13": "تاريخ 7oby المخصص والقطع المخصصة", "about-policies-14": "لأن أطقم <strong class=\"text-alabaster font-normal\">7oby</strong> تُطبع بتاريخ ذكرى مخصص، وقطع <strong class=\"text-alabaster font-normal\">استوديو فكرتك</strong> تُطبع خصيصًا حسب الطلب، فإن القطع المخصصة غير قابلة للاسترجاع إلا إذا وصلت بعيب تصنيع أو طباعة. (أطقم 7oby المطلوبة <em>بدون</em> تاريخ مخصص تظل مؤهلة لاستبدال المقاس خلال 14 يومًا.)", "about-policies-15": "كيف تطلب استبدالًا", "about-policies-16": "راسلنا على واتساب على <strong class=\"text-alabaster font-normal\">+20 100 000 0000</strong> أو عبر رسالة على <strong class=\"text-alabaster font-normal\">@fekra.wear</strong> مع رقم طلبك، وسيرتّب المندوب استلام القطعة من باب بيتك أو تبديل المقاس خلال 48 ساعة.", "page-10": "وُلدت من حديث في الجيم بين شريكين — لنحوّل الرسومات والأغاني والمشاعر وقصص الحب إلى تيشيرتات وهوديز تلبسها.", "page-11": "الفصول", "page-12": "المساعدة والتواصل", "page-13": "قصة البداية", "page-14": "جدول مقاسات القصّة البوكسي", "page-15": "سياسة الاسترجاع والاستبدال", "page-16": "واتساب: +20 100 000 0000", "page-17": "إنستجرام: @fekra.wear", "page-18": "&copy; 2026 فكرة. جميع الحقوق محفوظة.", "page-19": "جدول المقاسات", "page-20": "الاسترجاع", "page-21": "اصنع فكرتك", "modal-single-color-box-1": "اختر اللون", "modal-single-size-box-1": "اختر المقاس", "modal-single-size-box-2": "جدول المقاسات", "modal-duo-size-box-1": "طقم من تيشيرتين — خصّص كل واحد", "modal-duo-size-box-2": "جدول المقاسات", "modal-duo-size-box-3": "معاينة الطقم مباشرةً", "modal-duo-size-box-4": "له", "modal-duo-size-box-5": "لها", "modal-duo-size-box-6": "تيشيرت له — اللون والمقاس", "modal-duo-size-box-7": "تيشيرت لها — اللون والمقاس", "modal-sleeve-date-box-1": "طباعة تاريخ الذكرى / تاريخ مخصص على الكم (اختياري)", "modal-fabric-1": "الطباعة:", "quickview-modal-1": "<strong class=\"text-alabaster font-normal\">المنشأ:</strong> صُنع في القاهرة", "cart-drawer-1": "حقيبتك", "cart-drawer-3": "المجموع الفرعي", "checkout-form-1": "نؤكد كل طلب معك على واتساب قبل التصنيع أو الشحن.", "checkout-form-2": "الاسم بالكامل", "checkout-form-3": "رقم واتساب", "checkout-form-4": "المحافظة", "checkout-form-5": "ملاحظات (اختياري)", "checkout-form-6": "العنوان بالتفصيل", "checkout-form-7": "كيف تفضّل الدفع؟", "checkout-form-8": "الإجمالي", "co-payment-1": "الدفع عند الاستلام", "co-payment-2": "إنستاباي", "co-payment-3": "فودافون كاش", "checkout-done-2": "تم استلام الطلب"};
+        const UI_AR = {"garment-tee-btn": "تيشيرت بوكسي", "garment-hoodie-btn": "هودي بوكسي", "cam-front-btn": "أمام", "cam-side-btn": "جانب", "cam-back-btn": "خلف", "cam-center-btn": "توسيط", "target-front-transform-btn": "الأمام", "target-back-transform-btn": "الخلف", "reset-print-btn": "إعادة ضبط", "front-mode-text-btn": "نص", "front-mode-draw-btn": "رسم", "front-mode-photo-btn": "صورة", "remove-front-photo-btn": "إزالة", "clear-draw-btn": "مسح اللوحة", "modal-add-btn": "أضف إلى الحقيبة", "custom-submit-bag-btn": "اذهب إلى حقيبتي", "custom-submit-close-btn": "تابع التصميم", "checkout-btn": "إتمام الطلب", "checkout-title": "بيانات التوصيل", "co-submit": "تأكيد الطلب", "co-done-wa": "أرسل الطلب على واتساب", "co-done-close": "العودة إلى الموقع", "custom-submit-title": "فكرتك وصلت"};
         let siteLang = 'en';
         try { siteLang = localStorage.getItem('fekra-lang') === 'ar' ? 'ar' : 'en'; } catch (e) {}
         let textOverrides = {};
-        // Buttons, cart and checkout messages: defaults here, edited in the admin (Website text > Buttons & messages)
-        const STR_DEFAULTS = {"cart.emptyTitle": {"en": "Your bag is empty", "ar": "حقيبتك فارغة"}, "cart.emptyText": {"en": "Explore {chapters}—or co-create a 1-of-1 piece in Create Your Fekra.", "ar": "استكشف {chapters} — أو اصنع قطعة فريدة في «اصنع فكرتك»."}, "cart.remove": {"en": "Remove", "ar": "حذف"}, "cart.size": {"en": "Size:", "ar": "المقاس:"}, "cart.sleeveDate": {"en": "Sleeve Date Print:", "ar": "تاريخ الكم المطبوع:"}, "cart.noDate": {"en": "No date added", "ar": "لا يوجد تاريخ"}, "cart.customNote": {"en": "The FEKRA team will confirm the design with you on WhatsApp.", "ar": "سيؤكد فريق فكرة التصميم معك على واتساب."}, "currency": {"en": "EGP", "ar": "ج.م"}, "shop.add": {"en": "Add To Bag", "ar": "أضف إلى الحقيبة"}, "shop.addPair": {"en": "Add Matching Pair To Bag", "ar": "أضف الطقم إلى الحقيبة"}, "shop.added": {"en": "Added \"{title}\" ({size}) to bag", "ar": "تمت إضافة \"{title}\" ({size}) إلى الحقيبة"}, "co.errName": {"en": "Please enter your name.", "ar": "من فضلك أدخل اسمك."}, "co.errPhone": {"en": "Please enter a WhatsApp number we can reach you on.", "ar": "من فضلك أدخل رقم واتساب نستطيع التواصل معك عليه."}, "co.errGov": {"en": "Please choose your governorate.", "ar": "من فضلك اختر محافظتك."}, "co.errAddress": {"en": "Please enter your full delivery address.", "ar": "من فضلك أدخل عنوان التوصيل بالكامل."}, "co.sending": {"en": "Sending…", "ar": "جارٍ الإرسال…"}, "co.place": {"en": "Place Order", "ar": "تأكيد الطلب"}, "co.doneConfirmed": {"en": "We have your order. The FEKRA team will message you on WhatsApp shortly to confirm the details. Tap below to send us your order summary too — it speeds things up.", "ar": "وصلنا طلبك. سيراسلك فريق فكرة على واتساب قريبًا لتأكيد التفاصيل. اضغط بالأسفل لترسل لنا ملخص طلبك أيضًا — فهذا يسرّع الأمر."}, "co.doneConfirmedCustom": {"en": "We have your order. The FEKRA team will message you on WhatsApp shortly to confirm the details and finalize your custom design with you. Tap below to send us your order summary too — it speeds things up.", "ar": "وصلنا طلبك. سيراسلك فريق فكرة على واتساب قريبًا لتأكيد التفاصيل وإنهاء تصميمك المخصص معك. اضغط بالأسفل لترسل لنا ملخص طلبك أيضًا — فهذا يسرّع الأمر."}, "co.doneSent": {"en": "Your order was sent. The FEKRA team will message you on WhatsApp shortly. Please tap below to send us your order summary as well, so nothing gets missed.", "ar": "تم إرسال طلبك. سيراسلك فريق فكرة على واتساب قريبًا. من فضلك اضغط بالأسفل لترسل لنا ملخص طلبك أيضًا حتى لا يفوتنا شيء."}, "co.doneFailed": {"en": "We could not send your order automatically (check your connection). Please tap the button below to send it to us on WhatsApp — your order number is saved in the message.", "ar": "تعذّر إرسال طلبك تلقائيًا (تحقق من الاتصال). من فضلك اضغط الزر بالأسفل لترسله لنا على واتساب — رقم طلبك محفوظ في الرسالة."}, "co.doneManual": {"en": "Please tap the button below to send your order to us on WhatsApp so we can confirm it.", "ar": "من فضلك اضغط الزر بالأسفل لترسل لنا طلبك على واتساب حتى نؤكده."}, "studio.thanks": {"en": "Thank you, {name}! The FEKRA team will contact you on WhatsApp{contact} to finalize the design to your liking. Your custom {color} {garment} has been added to your bag — please head to your bag to check out.", "ar": "شكرًا {name}! سيتواصل معك فريق فكرة على واتساب{contact} لإنهاء التصميم كما تحب. تمت إضافة {garment} {color} المخصص إلى حقيبتك — من فضلك توجّه إلى الحقيبة لإتمام الطلب."}, "studio.hintStart": {"en": "Drag to spin • tap Edit Print to place your design", "ar": "اسحب للتدوير • اضغط «تعديل الطباعة» لتضع تصميمك"}, "studio.hintOrbit": {"en": "Drag to spin • Right-drag / Shift+drag to move tee", "ar": "اسحب للتدوير • اسحب بالزر الأيمن لتحريك القطعة"}, "studio.hintPrint": {"en": "Drag to move • corner squares resize • round handle rotates • scroll or pinch to resize", "ar": "اسحب للتحريك • المربعات تغيّر الحجم • المقبض الدائري يدوّر • مرّر أو اقرص للتكبير"}, "catalog.loading": {"en": "Loading the archive…", "ar": "جارٍ تحميل الأرشيف…"}, "catalog.soon": {"en": "New pieces are coming soon.", "ar": "قطع جديدة قريبًا."}, "catalog.error": {"en": "We could not load the archive. Please refresh the page.", "ar": "تعذّر تحميل الأرشيف. من فضلك حدّث الصفحة."}, "catalog.notConnected": {"en": "The catalog is not connected yet.", "ar": "الكتالوج غير متصل بعد."}, "ph.motif": {"en": "Type English or Arabic text (e.g. FEKRA — فكرة)...", "ar": "اكتب نصًا بالإنجليزية أو العربية (مثال: FEKRA — فكرة)..."}, "ph.fullName": {"en": "Full name", "ar": "الاسم بالكامل"}, "ph.phone": {"en": "+20 1XX XXX XXXX", "ar": "+20 1XX XXX XXXX"}, "ph.sleeveDate": {"en": "e.g. 14 . 02 . 2026 (Leave blank for no date)", "ar": "مثال: 14 . 02 . 2026 (اتركه فارغًا بدون تاريخ)"}, "ph.phone2": {"en": "01X XXXX XXXX", "ar": "01X XXXX XXXX"}, "ph.notes": {"en": "Landmark, delivery time…", "ar": "علامة مميزة، وقت التوصيل…"}, "ph.address": {"en": "Street, building, floor, apartment", "ar": "الشارع، المبنى، الدور، الشقة"}};
-        let strOverrides = {};
-        function tx(key, vars) {
-            const d = STR_DEFAULTS[key] || { en: key, ar: key }, o = strOverrides[key] || {};
-            let out = (siteLang === 'ar') ? (o.ar || d.ar || o.en || d.en) : (o.en || d.en);
-            if (vars) Object.keys(vars).forEach(k => { out = out.split('{' + k + '}').join(vars[k]); });
-            return out;
-        }
-        const PH_KEYS = { 'bespoke-motif-input': 'ph.motif', 'bespoke-name': 'ph.fullName', 'bespoke-contact': 'ph.phone', 'modal-sleeve-date': 'ph.sleeveDate', 'co-name': 'ph.fullName', 'co-whatsapp': 'ph.phone2', 'co-notes': 'ph.notes', 'co-address': 'ph.address' };
-        let hintMode = 'start';
-        function setHint(mode) { hintMode = mode; const el = document.getElementById('viewport-hint-text'); if (el) el.textContent = tx('studio.hint' + mode.charAt(0).toUpperCase() + mode.slice(1)); }
-        const FONT_DEFAULTS = { heading: 'Cormorant Garamond', body: 'Plus Jakarta Sans', arHeading: 'Amiri', arBody: 'Cairo' };
-        // Fonts chosen in the admin (Website text > Website fonts). Only fonts that differ from the defaults are loaded.
-        function applyFonts(f) {
-            f = f || {};
-            const clean = (v, d) => { v = String(v || '').replace(/[^A-Za-z0-9 ]/g, '').trim(); return v.length >= 2 ? v : d; };
-            const F = { heading: clean(f.heading, FONT_DEFAULTS.heading), body: clean(f.body, FONT_DEFAULTS.body), arHeading: clean(f.arHeading, FONT_DEFAULTS.arHeading), arBody: clean(f.arBody, FONT_DEFAULTS.arBody) };
-            const extra = [...new Set(Object.keys(F).map(k => F[k]).filter(n => !Object.values(FONT_DEFAULTS).includes(n)))];
-            const old = document.getElementById('fekra-fonts-link');
-            if (old) old.remove();
-            if (extra.length) {
-                const tries = ['wght@300;400;500;600;700', 'wght@400;700', ''];
-                const load = (i) => {
-                    const l = document.createElement('link');
-                    l.id = 'fekra-fonts-link'; l.rel = 'stylesheet';
-                    l.href = 'https://fonts.googleapis.com/css2?' + extra.map(n => 'family=' + n.replace(/ /g, '+') + (tries[i] ? ':' + tries[i] : '')).join('&') + '&display=swap';
-                    l.onerror = () => { l.remove(); if (i + 1 < tries.length) load(i + 1); };
-                    document.head.appendChild(l);
-                };
-                load(0);
-            }
-            let st = document.getElementById('fekra-fonts-css');
-            if (!st) { st = document.createElement('style'); st.id = 'fekra-fonts-css'; document.head.appendChild(st); }
-            const q = (n) => '"' + n + '"', css = [];
-            if (F.heading !== FONT_DEFAULTS.heading) css.push('html:not([lang=ar]) .font-serif{font-family:' + q(F.heading) + ',Georgia,serif!important}');
-            if (F.body !== FONT_DEFAULTS.body) css.push('html:not([lang=ar]) body,html:not([lang=ar]) .font-sans{font-family:' + q(F.body) + ',sans-serif!important}');
-            if (F.arHeading !== FONT_DEFAULTS.arHeading) css.push('.font-arabic,html[lang=ar] .font-serif,html[lang=ar] h1,html[lang=ar] h2,html[lang=ar] h3{font-family:' + q(F.arHeading) + ',serif!important}');
-            if (F.arBody !== FONT_DEFAULTS.arBody) css.push('html[lang=ar] body,html[lang=ar] .font-sans,html[lang=ar] button,html[lang=ar] input,html[lang=ar] textarea,html[lang=ar] select{font-family:' + q(F.arBody) + ',sans-serif!important}');
-            st.textContent = css.join('\n');
-        }
         const hashStr = (str) => { let h = 5381; for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0; return (h >>> 0).toString(36); };
         // Keeps only simple inline formatting, so edited text can never inject scripts
         function cleanHTML(html) {
@@ -1454,6 +1446,20 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
                 if (a.firstChild && a.firstChild.nodeType === 3) a.firstChild.nodeValue = a.firstChild.nodeValue.replace(/^(\s*)\d+\./, '$1' + String(i + 1).padStart(2, '0') + '.');
             });
         }
+        // Gives every remaining static text on the page an edit key, so "Website text" can change all of it.
+        function autoTagText() {
+            const SKIP = 'script,style,svg,select,option,input,textarea,[data-noedit],#lookbook-grid,#cart-items-container,#size-chart-tbody,#size-chart-thead-row,#size-chart-tabs,#garment-switcher,#font-specimen-list,#studio-size-selector,#color-selector,#nav-chapters-desktop,#nav-chapters-mobile,#footer-chapters,#category-filters,#collection-story-banner';
+            const INLINE = new Set(['A', 'B', 'STRONG', 'I', 'EM', 'SPAN', 'SMALL', 'BR', 'SUP', 'SUB', 'U', 'MARK']);
+            const STATIC_IDS = new Set(['mode-print-btn', 'cam-front-btn', 'cam-side-btn', 'cam-back-btn', 'cam-center-btn', 'target-front-transform-btn', 'target-back-transform-btn', 'reset-print-btn', 'front-mode-text-btn', 'front-mode-draw-btn', 'front-mode-photo-btn', 'remove-front-photo-btn', 'clear-draw-btn', 'remove-photo-btn', 'bespoke-submit-btn', 'custom-submit-title', 'custom-submit-bag-btn', 'custom-submit-close-btn', 'checkout-btn', 'checkout-title', 'co-done-close', 'co-done-wa']);
+            const seen = {};
+            document.body.querySelectorAll('*').forEach(el => {
+                if (el.closest(SKIP) || el.closest('[data-ek]') || (el.id && !STATIC_IDS.has(el.id)) || el.querySelector('[data-ek]')) return;
+                if ([...el.children].some(c => !INLINE.has(c.tagName) || c.id || c.querySelector('[id]'))) return;
+                if (![...el.childNodes].some(n => n.nodeType === 3 && /[A-Za-z؀-ۿ]/.test(n.nodeValue))) return;
+                const h = hashStr(el.innerHTML); seen[h] = (seen[h] || 0) + 1;
+                el.setAttribute('data-ek', 'x-' + h + '-' + seen[h]);
+            });
+        }
         function applyLang(lang) {
             siteLang = lang === 'ar' ? 'ar' : 'en';
             const els = document.querySelectorAll('[data-ek]');
@@ -1464,14 +1470,14 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
                 const k = el.getAttribute('data-ek');
                 const ov = textOverrides[k] && textOverrides[k].o === hashStr(el.__o) ? textOverrides[k] : null;
                 let html = el.__o;
-                if (siteLang === 'ar') html = (ov && ov.ar) || AR_TEXT[k] || (ov && ov.en) || el.__o;
+                if (siteLang === 'ar') html = (ov && ov.ar) || AR_TEXT[k] || (el.id && UI_AR[el.id]) || (ov && ov.en) || el.__o;
                 else html = (ov && ov.en) || el.__o;
                 if (ov && (ov.ar || ov.en)) html = cleanHTML(html);
                 if (el.innerHTML !== html) el.innerHTML = html;
             });
             Object.keys(UI_AR).forEach(id => {
                 const el = document.getElementById(id);
-                if (!el) return;
+                if (!el || el.hasAttribute('data-ek')) return;
                 if (el.__en === undefined) el.__en = el.textContent.trim();
                 const cur = el.textContent.trim();
                 if (siteLang === 'ar' && cur === el.__en) el.textContent = UI_AR[id];
@@ -1481,11 +1487,6 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
                 b.className = 'px-2.5 py-1.5 ' + (b.dataset.lang === siteLang ? 'bg-champagne text-obsidian font-medium' : 'text-alabaster/70 hover:text-champagne');
             });
             renumberMobileNav();
-            Object.keys(PH_KEYS).forEach((id) => { const el = document.getElementById(id); if (el) el.placeholder = tx(PH_KEYS[id]); });
-            setHint(hintMode);
-            try { if (typeof updateCartUI === 'function') updateCartUI(); } catch (e) {}
-            try { const ab = document.getElementById('modal-add-btn'); if (ab && typeof activeProduct !== 'undefined' && activeProduct) ab.textContent = isPairCat(activeProduct.category) ? tx('shop.addPair') : tx('shop.add'); } catch (e) {}
-            try { const sb = document.getElementById('co-submit'); if (sb && !sb.disabled) sb.textContent = tx('co.place'); } catch (e) {}
             if (typeof buildGarmentSwitcher === 'function') { buildGarmentSwitcher(); renderSizeChartTabs(); renderSizeChart(); }
             if (typeof applyContactSettings === 'function') applyContactSettings();
             try { localStorage.setItem('fekra-lang', siteLang); } catch (e) {}
@@ -1495,6 +1496,15 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
             if (b) applyLang(b.dataset.lang);
         });
 
+        // Design preview: the admin "Design" tab sends colours / fonts here while you are still choosing them
+        if (/[?&]fekra-design=1/.test(location.search) && window.parent !== window) {
+            window.addEventListener('message', (e) => {
+                const m = e.data;
+                if (e.origin !== location.origin || !m || m.src !== 'fekra-admin' || m.type !== 'theme') return;
+                window.__themeLive = true; window.fekraApplyTheme(m.theme);
+            });
+            parent.postMessage({ src: 'fekra', type: 'ready' }, location.origin);
+        }
         // Studio-only mode: the admin's "Bespoke Studio" tab shows just the studio (index.html?fekra-studio=1)
         if (/[?&]fekra-studio=1/.test(location.search)) {
             const st = document.createElement('style');
@@ -1505,35 +1515,30 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
         // Edit mode: used only by the admin "Website text" preview (index.html?fekra-edit=1 inside the admin page)
         const EDIT_MODE = /[?&]fekra-edit=1/.test(location.search) && window.parent !== window;
         if (EDIT_MODE) {
+            const st0 = document.createElement('style');
+            st0.textContent = '#size-chart-tbody td,#size-chart-thead-row th,#size-chart-tabs button,#size-chart-subtitle{cursor:text;outline:1px dashed transparent;outline-offset:2px}#size-chart-tbody td:hover,#size-chart-thead-row th:hover,#size-chart-tabs button:hover,#size-chart-subtitle:hover{outline-color:#C5A880}[contenteditable=true]{outline:2px solid #C5A880!important;background:rgba(197,168,128,.12)}';
+            document.head.appendChild(st0);
             const st = document.createElement('style');
             st.textContent = '[data-ek]{cursor:text;outline:1px dashed transparent;outline-offset:3px;transition:outline-color .15s}[data-ek]:hover{outline-color:#C5A880}[data-ek][contenteditable=true]{outline:2px solid #C5A880;background:rgba(197,168,128,.12)}.reveal{opacity:1!important;transform:none!important}';
             document.head.appendChild(st);
             let current = null;
             const send = (m) => parent.postMessage({ src: 'fekra', ...m }, location.origin);
-            const payload = () => current.__ck
-                ? { type: 'html', key: current.__ck, lang: siteLang, html: (current.textContent || '').trim() }
-                : { type: 'html', key: current.getAttribute('data-ek'), lang: siteLang, o: hashStr(current.__o), html: cleanHTML(current.innerHTML) };
-            const commitIfDirty = () => { if (current && current.__dirty) { send(payload()); current.__dirty = false; } };
             document.addEventListener('click', (e) => {
-                const cell = e.target.closest && e.target.closest('#size-chart-tbody td,#size-chart-thead-row th,#size-chart-tabs [data-chart],#size-chart-subtitle');
-                if (cell) {
-                    const isTab = !!cell.dataset.chart;
-                    if (isTab && cell.dataset.chart !== activeChart) return;     // first tap on another tab just switches the chart
+                const ce = e.target.closest && e.target.closest('#size-chart-tbody td,#size-chart-thead-row th,#size-chart-tabs button,#size-chart-subtitle');
+                if (ce) {
                     e.preventDefault(); e.stopPropagation();
-                    commitIfDirty();
-                    if (current && current !== cell) current.removeAttribute('contenteditable');
-                    current = cell;
-                    cell.__ck = cell.tagName === 'TD' ? `chart|${activeChart}|cell|${cell.parentElement.sectionRowIndex}|${cell.cellIndex}`
-                        : cell.tagName === 'TH' ? `chart|${activeChart}|h|${cell.cellIndex}|${siteLang}`
-                        : isTab ? `chart|${activeChart}|tab|0|${siteLang}` : `chart|${activeChart}|sub|0|${siteLang}`;
-                    cell.setAttribute('contenteditable', 'true'); cell.spellcheck = false; cell.focus();
-                    send({ type: 'select', key: cell.__ck, lang: siteLang, label: 'Size chart: ' + (cell.textContent || '').trim().slice(0, 40) });
+                    const tabBtn = ce.closest('#size-chart-tabs button');
+                    if (tabBtn && tabBtn.dataset.chart !== activeChart) { renderSizeChart(tabBtn.dataset.chart); renderSizeChartTabs(); send({ type: 'select', key: '', lang: siteLang, label: 'Switched size chart. Click again to edit.' }); return; }
+                    if (current && current !== ce) current.removeAttribute('contenteditable');
+                    current = ce; ce.__chart = tabBtn ? { kind: 'tab', gid: activeChart } : ce.id === 'size-chart-subtitle' ? { kind: 'sub', gid: activeChart }
+                        : ce.tagName === 'TH' ? { kind: 'head', gid: activeChart, c: ce.cellIndex } : { kind: 'cell', gid: activeChart, r: ce.parentElement.rowIndex - 1, c: ce.cellIndex };
+                    ce.setAttribute('contenteditable', 'true'); ce.spellcheck = false; ce.focus();
+                    send({ type: 'select', key: 'chart', lang: siteLang, o: '', label: 'Size chart: ' + (ce.textContent || '').trim().slice(0, 50) });
                     return;
                 }
                 const el = e.target.closest && e.target.closest('[data-ek]');
                 if (!el) return;
                 e.preventDefault(); e.stopPropagation();
-                commitIfDirty();
                 if (current && current !== el) current.removeAttribute('contenteditable');
                 current = el;
                 el.setAttribute('contenteditable', 'true');
@@ -1541,14 +1546,24 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
                 el.focus();
                 send({ type: 'select', key: el.getAttribute('data-ek'), lang: siteLang, o: hashStr(el.__o), label: (el.textContent || '').trim().slice(0, 70) });
             }, true);
-            document.addEventListener('input', (e) => { if (e.target === current) { current.__dirty = true; send({ type: 'dirty' }); } });
-            document.addEventListener('keydown', (e) => { if (current && e.key === 'Enter' && document.activeElement === current) { e.preventDefault(); if (current.__ck) current.blur(); else document.execCommand('insertLineBreak'); } }, true);
+            document.addEventListener('input', (e) => { if (e.target === current) send({ type: 'dirty' }); });
+            document.addEventListener('keydown', (e) => { if (current && e.key === 'Enter' && document.activeElement === current) { e.preventDefault(); document.execCommand('insertLineBreak'); } }, true);
             window.addEventListener('message', (e) => {
                 const m = e.data;
                 if (e.origin !== location.origin || !m || m.src !== 'fekra-admin') return;
                 if (m.type === 'lang') applyLang(m.lang);
-                else if (m.type === 'getHtml' && current) { send(payload()); current.__dirty = false; }
-                else if (m.type === 'fonts') applyFonts(m.fonts);
+                else if (m.type === 'getHtml' && current && current.__chart) {
+                    const d = current.__chart, text = current.textContent.trim(), g = garments.find(x => x.id === d.gid);
+                    if (g) {
+                        g.chart = JSON.parse(JSON.stringify(g.chart));
+                        if (d.kind === 'cell') (g.chart.rows[d.r] = g.chart.rows[d.r] || [])[d.c] = text;
+                        else if (d.kind === 'head') g.chart.cols[d.c][siteLang === 'ar' ? 'ar' : 'en'] = text;
+                        else if (d.kind === 'tab') g[siteLang === 'ar' ? 'chartTabAr' : 'chartTab'] = text;
+                        else g[siteLang === 'ar' ? 'subtitleAr' : 'subtitle'] = text;
+                    }
+                    send({ type: 'chartsave', ...d, lang: siteLang, text });
+                }
+                else if (m.type === 'getHtml' && current) send({ type: 'html', key: current.getAttribute('data-ek'), lang: siteLang, o: hashStr(current.__o), html: cleanHTML(current.innerHTML) });
                 else if (m.type === 'saved') { textOverrides[m.key] = { ...(textOverrides[m.key] || {}), o: m.o, [m.lang]: m.html }; }
                 else if (m.type === 'reset') { if (textOverrides[m.key]) delete textOverrides[m.key][m.lang]; applyLang(siteLang); }
             });
@@ -1556,18 +1571,24 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
 
         async function loadCatalog() {
             const grid = document.getElementById('lookbook-grid');
-            if (!fekraDb) { grid.innerHTML = '<p class="text-stone text-sm col-span-full">' + tx('catalog.notConnected') + '</p>'; return; }
-            grid.innerHTML = '<p class="text-stone text-sm col-span-full">' + tx('catalog.loading') + '</p>';
+            if (!fekraDb) { grid.innerHTML = '<p class="text-stone text-sm col-span-full">The catalog is not connected yet.</p>'; return; }
+            grid.innerHTML = '<p class="text-stone text-sm col-span-full">Loading the archive…</p>';
             try {
-                const [cs, ps, ss, cls, cds, gds, sos] = await Promise.all([
+                const [cs, ps, ss, cls, cds, gds, sos, thm] = await Promise.all([
                     fekraDb.collection('chapters').get(),
                     fekraDb.collection('products').get(),
                     fekraDb.collection('settings').doc('store').get(),
                     fekraDb.collection('colors').get().catch(() => ({ docs: [] })),
                     fekraDb.collection('content').doc('site').get().catch(() => null),
                     fekraDb.collection('garments').get().catch(() => ({ docs: [] })),
-                    fekraDb.collection('studio').doc('options').get().catch(() => null)
+                    fekraDb.collection('studio').doc('options').get().catch(() => null),
+                    fekraDb.collection('content').doc('theme').get().catch(() => null)
                 ]);
+                if (thm && !window.__themeLive) {
+                    const td = thm.exists ? thm.data() : {};
+                    window.fekraApplyTheme(td);
+                    try { thm.exists ? localStorage.setItem('fekra-theme', JSON.stringify(td)) : localStorage.removeItem('fekra-theme'); } catch (e) {}
+                }
                 const s = ss.exists ? ss.data() : {};
                 const oldWa = FEKRA_CONFIG.WHATSAPP_DISPLAY, oldIg = FEKRA_CONFIG.INSTAGRAM;
                 if (s.whatsapp) FEKRA_CONFIG.STORE_WHATSAPP = String(s.whatsapp).replace(/\D/g, '');
@@ -1588,8 +1609,6 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
                 });
                 palette = cls.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.order || 0) - (b.order || 0));
                 textOverrides = (cds && cds.exists && cds.data().texts) || {};
-                strOverrides = (cds && cds.exists && cds.data().strings) || {};
-                applyFonts(cds && cds.exists ? cds.data().fonts : null);
                 const gl = gds.docs.map(d => ({ id: d.id, ...d.data() })).filter(g => g.visible !== false).sort((a, b) => (a.order || 0) - (b.order || 0));
                 if (gds.docs.length) garments = gl;   // nothing saved yet -> keep the built-in Tee + Hoodie
                 refreshGarments();
@@ -1599,10 +1618,10 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
                 buildStudioColors();
                 setActiveFilter('all');
                 updateCartUI();
-                if (!products.length) grid.innerHTML = '<p class="text-stone text-sm col-span-full">' + tx('catalog.soon') + '</p>';
+                if (!products.length) grid.innerHTML = '<p class="text-stone text-sm col-span-full">New pieces are coming soon.</p>';
             } catch (err) {
                 console.error(err);
-                grid.innerHTML = '<p class="text-stone text-sm col-span-full">' + tx('catalog.error') + '</p>';
+                grid.innerHTML = '<p class="text-stone text-sm col-span-full">We could not load the archive. Please refresh the page.</p>';
             }
         }
 
@@ -1849,13 +1868,13 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
                 sleeveDateInput.value = '';
                 singleSizeBox.classList.add('hidden');
                 duoSizeBox.classList.remove('hidden');
-                modalAddBtn.textContent = tx('shop.addPair');
+                modalAddBtn.textContent = 'Add Matching Pair To Bag';
                 update7obyDuoPreview();
             } else {
                 sleeveDateBox.classList.add('hidden');
                 singleSizeBox.classList.remove('hidden');
                 duoSizeBox.classList.add('hidden');
-                modalAddBtn.textContent = tx('shop.add');
+                modalAddBtn.textContent = 'Add To Bag';
             }
 
             // Reset single size buttons to M
@@ -2029,7 +2048,7 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
                 cart.push({ ...product, size, sleeveDate, qty: 1 });
             }
             updateCartUI();
-            showToast(tx('shop.added', { title: product.title, size: size }));
+            showToast(`Added "${product.title}" (${size}) to bag`);
         }
 
         function updateItemQty(index, delta) {
@@ -2052,8 +2071,8 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
                 cartItemsContainer.innerHTML = `
                     <div class="h-full flex flex-col items-center justify-center text-center py-12">
                         <span class="font-arabic text-4xl text-champagne/60 mb-3">فكرة</span>
-                        <p class="font-serif text-2xl text-alabaster mb-2">${tx('cart.emptyTitle')}</p>
-                        <p class="text-xs text-stone max-w-xs leading-relaxed">${tx('cart.emptyText', { chapters: chapters.map(c => c.name).join(', ') })}</p>
+                        <p class="font-serif text-2xl text-alabaster mb-2">Your bag is empty</p>
+                        <p class="text-xs text-stone max-w-xs leading-relaxed">Explore ${chapters.map(c => c.name).join(', ')}—or co-create a 1-of-1 piece in Create Your Fekra.</p>
                     </div>
                 `;
                 return;
@@ -2066,11 +2085,11 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
                         <div>
                             <div class="flex justify-between items-start gap-2">
                                 <h4 class="font-serif text-lg text-alabaster leading-snug">${item.title}</h4>
-                                <button onclick="updateItemQty(${idx}, -${item.qty})" class="text-xs text-stone hover:text-champagne">${tx('cart.remove')}</button>
+                                <button onclick="updateItemQty(${idx}, -${item.qty})" class="text-xs text-stone hover:text-champagne">Remove</button>
                             </div>
-                            <p class="text-xs uppercase tracking-widest text-champagne mt-1">${(isPairCat(item.category) || item.category === 'custom') ? item.size : `${tx('cart.size')} ${item.size}`}</p>
-                            ${isPairCat(item.category) ? `<p class="text-[11px] text-alabaster/80 mt-1">${tx('cart.sleeveDate')} <span class="text-champagne">${item.sleeveDate || tx('cart.noDate')}</span></p>` : ''}
-                            ${item.category === 'custom' ? `<p class="text-[11px] text-alabaster/80 mt-1">${tx('cart.customNote')}</p>` : ''}
+                            <p class="text-xs uppercase tracking-widest text-champagne mt-1">${(isPairCat(item.category) || item.category === 'custom') ? item.size : `Size: ${item.size}`}</p>
+                            ${isPairCat(item.category) ? `<p class="text-[11px] text-alabaster/80 mt-1">Sleeve Date Print: <span class="text-champagne">${item.sleeveDate || 'No date added'}</span></p>` : ''}
+                            ${item.category === 'custom' ? `<p class="text-[11px] text-alabaster/80 mt-1">The FEKRA team will confirm the design with you on WhatsApp.</p>` : ''}
                         </div>
                         <div class="flex items-center justify-between mt-3">
                             <div class="flex items-center border border-white/15 rounded-sm">
@@ -2181,15 +2200,15 @@ async function saveOrderToDb(order) {
             const val = (id) => document.getElementById(id).value.trim();
             const digits = val('co-whatsapp').replace(/\D/g, '');
             let problem = '';
-            if (val('co-name').length < 2) problem = tx('co.errName');
-            else if (digits.length < 10 || digits.length > 15) problem = tx('co.errPhone');
-            else if (!val('co-gov')) problem = tx('co.errGov');
-            else if (val('co-address').length < 8) problem = tx('co.errAddress');
+            if (val('co-name').length < 2) problem = 'Please enter your name.';
+            else if (digits.length < 10 || digits.length > 15) problem = 'Please enter a WhatsApp number we can reach you on.';
+            else if (!val('co-gov')) problem = 'Please choose your governorate.';
+            else if (val('co-address').length < 8) problem = 'Please enter your full delivery address.';
             if (problem) { errEl.textContent = problem; errEl.classList.remove('hidden'); return; }
             errEl.classList.add('hidden');
 
             const submitBtn = document.getElementById('co-submit');
-            submitBtn.disabled = true; submitBtn.textContent = tx('co.sending');
+            submitBtn.disabled = true; submitBtn.textContent = 'Sending…';
 
             const pay = (document.querySelector('input[name="co-pay"]:checked') || {}).value || 'cod';
             const subtotal = cartSubtotal(), shipping = FEKRA_CONFIG.SHIPPING_FEE || 0;
@@ -2219,13 +2238,13 @@ async function saveOrderToDb(order) {
             document.getElementById('co-done-id').textContent = order.orderId;
             document.getElementById('co-done-wa').href = waLink;
             const msgs = {
-                'confirmed': order.items.some(i => i.design) ? tx('co.doneConfirmedCustom') : tx('co.doneConfirmed'),
-                'unconfirmed': tx('co.doneSent'),
-                'failed': tx('co.doneFailed'),
-                'not-configured': tx('co.doneManual')
+                'confirmed': 'We have your order. The FEKRA team will message you on WhatsApp shortly to confirm the details' + (order.items.some(i => i.design) ? ' and finalize your custom design with you' : '') + '. Tap below to send us your order summary too — it speeds things up.',
+                'unconfirmed': 'Your order was sent. The FEKRA team will message you on WhatsApp shortly. Please tap below to send us your order summary as well, so nothing gets missed.',
+                'failed': 'We could not send your order automatically (check your connection). Please tap the button below to send it to us on WhatsApp — your order number is saved in the message.',
+                'not-configured': 'Please tap the button below to send your order to us on WhatsApp so we can confirm it.'
             };
             document.getElementById('co-done-text').textContent = msgs[result];
-            submitBtn.disabled = false; submitBtn.textContent = tx('co.place');
+            submitBtn.disabled = false; submitBtn.textContent = 'Place Order';
 
             if (result === 'confirmed' || result === 'unconfirmed') { cart = []; updateCartUI(); }
             coForm.classList.add('hidden');
@@ -2902,7 +2921,7 @@ async function saveOrderToDb(order) {
                     if (printModeBtn) {
                         printModeBtn.className = 'py-2.5 px-3 rounded-sm border border-white/15 bg-obsidian/60 text-[11px] uppercase tracking-widest text-alabaster/80 hover:border-champagne transition-all';
                     }
-                    setHint('orbit');
+                    if (hintTextEl) hintTextEl.textContent = 'Drag to spin • Right-drag / Shift+drag to move tee';
                     container.style.cursor = '';
                     redraw3DPrintTextures();
                 });
@@ -2913,7 +2932,7 @@ async function saveOrderToDb(order) {
                     if (orbitModeBtn) {
                         orbitModeBtn.className = 'py-2.5 px-3 rounded-sm border border-white/15 bg-obsidian/60 text-[11px] uppercase tracking-widest text-alabaster/80 hover:border-champagne transition-all';
                     }
-                    setHint('print');
+                    if (hintTextEl) hintTextEl.textContent = 'Drag to move • corner squares resize • round handle rotates • scroll or pinch to resize';
                     redraw3DPrintTextures();
                 });
 
@@ -3388,7 +3407,9 @@ async function saveOrderToDb(order) {
 
             window.__fekraPrefill = { name, whatsapp: contactVal };
             const modalEl = document.getElementById('custom-submit-modal');
-            document.getElementById('custom-submit-text').textContent = tx('studio.thanks', { name: name, contact: contactVal ? ' (' + contactVal + ')' : '', color: activeColorName, garment: garmentName });
+            document.getElementById('custom-submit-text').textContent =
+                `Thank you, ${name}! The FEKRA team will contact you on WhatsApp${contactVal ? ' (' + contactVal + ')' : ''} to finalize the design to your liking. ` +
+                `Your custom ${activeColorName} ${garmentName} has been added to your bag — please head to your bag to check out.`;
             modalEl.classList.remove('hidden');
             modalEl.classList.add('flex');
         }
@@ -3494,6 +3515,7 @@ async function saveOrderToDb(order) {
         document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 
         // Initial Render
+        autoTagText();
         applyLang(siteLang);
         loadCatalog();
         refreshGarments();

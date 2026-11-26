@@ -28,8 +28,8 @@ main{max-width:1000px;margin:0 auto;padding:20px}.bar{display:flex;flex-wrap:wra
 #m{position:fixed;inset:0;background:#000b;display:grid;place-items:start center;overflow:auto;padding:30px 14px;z-index:10}.mb{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:22px;width:100%;max-width:540px}
 #toast{position:fixed;bottom:20px;right:20px;background:var(--gold);color:#141416;padding:10px 16px;border-radius:4px;z-index:20}
 .studio{display:grid;grid-template-columns:430px 1fr;gap:16px;align-items:start}.studio .sec{margin-bottom:14px}.studio h3{font-size:15px;margin-bottom:8px;color:var(--gold)}
-.studio #stfr{position:sticky;top:66px;width:100%;height:calc(100vh - 90px);border:1px solid var(--line);border-radius:8px;background:#000}.chip{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:14px;padding:3px 6px 3px 12px;margin:0 6px 6px 0}.chip a{cursor:pointer;color:var(--red);padding:0 4px}
-@media(max-width:1100px){.studio{grid-template-columns:1fr}.studio #stfr{position:static;height:80vh}}
+.studio #stfr,.studio #dfr{position:sticky;top:66px;width:100%;height:calc(100vh - 90px);border:1px solid var(--line);border-radius:8px;background:#000}.chip{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:14px;padding:3px 6px 3px 12px;margin:0 6px 6px 0}.chip a{cursor:pointer;color:var(--red);padding:0 4px}
+@media(max-width:1100px){.studio{grid-template-columns:1fr}.studio #stfr,.studio #dfr{position:static;height:80vh}}
 @media(max-width:640px){.g2,.perms{grid-template-columns:1fr}}
 </style></head><body>
 
@@ -59,9 +59,9 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const uname=u=>u.trim().toLowerCase().replace(/\s+/g,'');
 const slug=s=>s.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 const wa=n=>{let d=String(n||'').replace(/\D/g,'');return d.startsWith('00')?d.slice(2):d.startsWith('0')?'20'+d.slice(1):d};
-const PERMS={products:'Edit products',chapters:'Edit chapters',colors:'Edit studio colors',garments:'Edit Bespoke Studio (3D models, size charts, fonts, options)',content:'Edit website text',orders_view:'See orders',orders_edit:'Update orders',orders_delete:'Delete orders'};
+const PERMS={products:'Edit products',chapters:'Edit chapters',colors:'Edit studio colors',garments:'Edit Bespoke Studio (3D models, size charts, fonts, options)',content:'Edit website text & design (colors, fonts)',orders_view:'See orders',orders_edit:'Update orders',orders_delete:'Delete orders'};
 const STAT=['new','confirmed','printing','shipped','delivered','cancelled'];
-let me,tab,so=null,lastSig='',chs=[],cols=[],grs=[],prs=[],ors=[],stf=[],cfg={},unsub=[],of='all',oq='';
+let me,tab,th={},so=null,lastSig='',chs=[],cols=[],grs=[],prs=[],ors=[],stf=[],cfg={},unsub=[],of='all',oq='';
 const can=p=>me&&(me.role==='owner'||(me.perms||[]).includes(p));
 const toast=m=>{const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,2800)};
 const fail=e=>{console.error(e);toast(e.code==='permission-denied'?'You do not have permission for that.':'Error: '+e.message)};
@@ -77,25 +77,24 @@ auth.onAuthStateChanged(async u=>{unsub.forEach(f=>f());unsub=[];me=null;$('#app
   if(!s.exists||s.data().active===false){$('#le').innerHTML='No access yet. Ask an owner to enable your account.<br><small>ID: '+u.uid+'</small>';return}
   me={id:u.uid,...s.data()};start()}catch(x){$('#le').textContent='Could not load your profile: '+x.message}});
 
-let siteDoc={};
 function start(){$('#login').hidden=true;$('#app').hidden=false;$('#who').textContent=me.username+' · '+me.role;
  const sub=(q,fn)=>unsub.push(q.onSnapshot(fn,fail)),L=s=>s.docs.map(d=>({id:d.id,...d.data()}));
  sub(db.collection('chapters'),s=>{chs=L(s).sort((a,b)=>(a.order||0)-(b.order||0));draw('chapters','products')});
  sub(db.collection('colors'),s=>{cols=L(s).sort((a,b)=>(a.order||0)-(b.order||0));draw('colors')});
  if(can('garments'))sub(db.collection('garments'),s=>{grs=L(s).sort((a,b)=>(a.order||0)-(b.order||0));drawStudio();draw('colors')});
+ if(can('content'))unsub.push(db.collection('content').doc('theme').onSnapshot(d=>{th=d.exists?d.data():{};if(tab==='design'&&!$('#dpanel'))render()},fail));
  if(can('garments'))unsub.push(db.collection('studio').doc('options').onSnapshot(d=>{so=d.exists?d.data():null;drawStudio()},fail));
  if(can('products'))sub(db.collection('products'),s=>{prs=L(s).sort((a,b)=>(a.title||'').localeCompare(b.title||''));draw('products')});
  if(can('orders_view')||can('orders_edit'))sub(db.collection('orders').orderBy('createdAt','desc').limit(300),s=>{ors=L(s);draw('orders')});
  if(me.role==='owner')sub(db.collection('users'),s=>{stf=L(s);draw('staff')});
- db.collection('content').doc('site').get().then(d=>{siteDoc=d.data()||{};draw('site')}).catch(()=>{});
  db.collection('settings').doc('store').get().then(d=>{cfg=d.data()||{};draw('settings')}).catch(()=>{});
  if(can('orders_delete'))sweep().then(n=>n&&toast(n+' orders older than 30 days were cleaned up')).catch(()=>{});
  if(me.role==='owner')db.collection('meta').doc('status').set({done:true},{merge:true}).catch(()=>{});
  const t=[];if(can('orders_view')||can('orders_edit'))t.push(['orders','Orders']);if(can('products'))t.push(['products','Products']);
- if(can('chapters'))t.push(['chapters','Chapters']);if(can('colors'))t.push(['colors','Studio colors']);if(can('garments'))t.push(['studio','Bespoke Studio']);if(can('content'))t.push(['site','Website text']);if(me.role==='owner')t.push(['staff','Team'],['settings','Settings']);
+ if(can('chapters'))t.push(['chapters','Chapters']);if(can('colors'))t.push(['colors','Studio colors']);if(can('garments'))t.push(['studio','Bespoke Studio']);if(can('content'))t.push(['site','Website text'],['design','Design']);if(me.role==='owner')t.push(['staff','Team'],['settings','Settings']);
  $('#tabs').innerHTML=t.map(x=>`<button data-a="tab" data-id="${x[0]}">${x[1]}</button>`).join('');
  t.length?go(t[0][0]):$('#main').innerHTML='<p class="mu">Your account has no permissions yet. Ask an owner.</p>'}
-const go=t=>{tab=t;$('#main').style.maxWidth=t==='studio'?'1700px':'';document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.id===t));render()};
+const go=t=>{tab=t;$('#main').style.maxWidth=(t==='studio'||t==='design')?'1700px':'';document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.id===t));render()};
 const render=()=>{if(views[tab])$('#main').innerHTML=views[tab]()},draw=(...n)=>{if(n.includes(tab))render()};
 
 // ---------- images ----------
@@ -121,17 +120,9 @@ views.chapters=()=>`<div class="bar"><h2>Chapters <small>${chs.length}</small></
 views.colors=()=>`<div class="bar"><h2>Bespoke Studio colors <small>${cols.length}</small></h2><button class="btn" data-a="coledit">+ Add color</button></div>
  <p class="mu">Black and White are always available in the studio. Add every other color you can produce for custom pieces here. Colors for a specific product are chosen inside that product (Products tab).</p>`+
  (cols.length?cols.map(c=>`<div class="card"><div class="row"><span style="width:26px;height:26px;border-radius:50%;background:${esc(c.hex)};border:1px solid #fff4"></span><b>${esc(c.name)}</b><span class="mu">${esc(c.hex)}</span>${gList().map(g=>colorOk(c,g.id)?`<span class="tag">${esc(g.name)}</span>`:'').join('')}<button class="btn g s" data-a="coledit" data-id="${c.id}">Edit</button><button class="btn r s" data-a="coldel" data-id="${c.id}">Delete</button></div></div>`).join(''):'<p class="mu">No extra colors yet. Only Black and White are offered.</p>');
-const STRS=[["cart.emptyTitle", "Bag: empty title", "Your bag is empty", "حقيبتك فارغة"], ["cart.emptyText", "Bag: empty text", "Explore {chapters}—or co-create a 1-of-1 piece in Create Your Fekra.", "استكشف {chapters} — أو اصنع قطعة فريدة في «اصنع فكرتك»."], ["cart.remove", "Bag: remove button", "Remove", "حذف"], ["cart.size", "Bag: \"Size:\" label", "Size:", "المقاس:"], ["cart.sleeveDate", "Bag: sleeve date label", "Sleeve Date Print:", "تاريخ الكم المطبوع:"], ["cart.noDate", "Bag: no date added", "No date added", "لا يوجد تاريخ"], ["cart.customNote", "Bag: note under custom pieces", "The FEKRA team will confirm the design with you on WhatsApp.", "سيؤكد فريق فكرة التصميم معك على واتساب."], ["currency", "Currency label before prices", "EGP", "ج.م"], ["shop.add", "Product pop-up: add button", "Add To Bag", "أضف إلى الحقيبة"], ["shop.addPair", "Pair product: add button", "Add Matching Pair To Bag", "أضف الطقم إلى الحقيبة"], ["shop.added", "Notice after adding to bag", "Added \"{title}\" ({size}) to bag", "تمت إضافة \"{title}\" ({size}) إلى الحقيبة"], ["co.errName", "Checkout: name missing", "Please enter your name.", "من فضلك أدخل اسمك."], ["co.errPhone", "Checkout: phone missing", "Please enter a WhatsApp number we can reach you on.", "من فضلك أدخل رقم واتساب نستطيع التواصل معك عليه."], ["co.errGov", "Checkout: governorate missing", "Please choose your governorate.", "من فضلك اختر محافظتك."], ["co.errAddress", "Checkout: address missing", "Please enter your full delivery address.", "من فضلك أدخل عنوان التوصيل بالكامل."], ["co.sending", "Checkout: button while sending", "Sending…", "جارٍ الإرسال…"], ["co.place", "Checkout: place order button", "Place Order", "تأكيد الطلب"], ["co.doneConfirmed", "Order received message", "We have your order. The FEKRA team will message you on WhatsApp shortly to confirm the details. Tap below to send us your order summary too — it speeds things up.", "وصلنا طلبك. سيراسلك فريق فكرة على واتساب قريبًا لتأكيد التفاصيل. اضغط بالأسفل لترسل لنا ملخص طلبك أيضًا — فهذا يسرّع الأمر."], ["co.doneConfirmedCustom", "Order received message (custom design)", "We have your order. The FEKRA team will message you on WhatsApp shortly to confirm the details and finalize your custom design with you. Tap below to send us your order summary too — it speeds things up.", "وصلنا طلبك. سيراسلك فريق فكرة على واتساب قريبًا لتأكيد التفاصيل وإنهاء تصميمك المخصص معك. اضغط بالأسفل لترسل لنا ملخص طلبك أيضًا — فهذا يسرّع الأمر."], ["co.doneSent", "Order sent message", "Your order was sent. The FEKRA team will message you on WhatsApp shortly. Please tap below to send us your order summary as well, so nothing gets missed.", "تم إرسال طلبك. سيراسلك فريق فكرة على واتساب قريبًا. من فضلك اضغط بالأسفل لترسل لنا ملخص طلبك أيضًا حتى لا يفوتنا شيء."], ["co.doneFailed", "Order could not be sent message", "We could not send your order automatically (check your connection). Please tap the button below to send it to us on WhatsApp — your order number is saved in the message.", "تعذّر إرسال طلبك تلقائيًا (تحقق من الاتصال). من فضلك اضغط الزر بالأسفل لترسله لنا على واتساب — رقم طلبك محفوظ في الرسالة."], ["co.doneManual", "Order: send on WhatsApp message", "Please tap the button below to send your order to us on WhatsApp so we can confirm it.", "من فضلك اضغط الزر بالأسفل لترسل لنا طلبك على واتساب حتى نؤكده."], ["studio.thanks", "Studio: thank-you after sending a design", "Thank you, {name}! The FEKRA team will contact you on WhatsApp{contact} to finalize the design to your liking. Your custom {color} {garment} has been added to your bag — please head to your bag to check out.", "شكرًا {name}! سيتواصل معك فريق فكرة على واتساب{contact} لإنهاء التصميم كما تحب. تمت إضافة {garment} {color} المخصص إلى حقيبتك — من فضلك توجّه إلى الحقيبة لإتمام الطلب."], ["studio.hintStart", "Studio: hint when it opens", "Drag to spin • tap Edit Print to place your design", "اسحب للتدوير • اضغط «تعديل الطباعة» لتضع تصميمك"], ["studio.hintOrbit", "Studio: hint in spin mode", "Drag to spin • Right-drag / Shift+drag to move tee", "اسحب للتدوير • اسحب بالزر الأيمن لتحريك القطعة"], ["studio.hintPrint", "Studio: hint in print mode", "Drag to move • corner squares resize • round handle rotates • scroll or pinch to resize", "اسحب للتحريك • المربعات تغيّر الحجم • المقبض الدائري يدوّر • مرّر أو اقرص للتكبير"], ["catalog.loading", "Shop: loading", "Loading the archive…", "جارٍ تحميل الأرشيف…"], ["catalog.soon", "Shop: no products yet", "New pieces are coming soon.", "قطع جديدة قريبًا."], ["catalog.error", "Shop: could not load", "We could not load the archive. Please refresh the page.", "تعذّر تحميل الأرشيف. من فضلك حدّث الصفحة."], ["catalog.notConnected", "Shop: not connected", "The catalog is not connected yet.", "الكتالوج غير متصل بعد."], ["ph.motif", "Placeholder: studio text box", "Type English or Arabic text (e.g. FEKRA — فكرة)...", "اكتب نصًا بالإنجليزية أو العربية (مثال: FEKRA — فكرة)..."], ["ph.fullName", "Placeholder: full name", "Full name", "الاسم بالكامل"], ["ph.phone", "Placeholder: studio phone", "+20 1XX XXX XXXX", "+20 1XX XXX XXXX"], ["ph.sleeveDate", "Placeholder: sleeve date", "e.g. 14 . 02 . 2026 (Leave blank for no date)", "مثال: 14 . 02 . 2026 (اتركه فارغًا بدون تاريخ)"], ["ph.phone2", "Placeholder: checkout phone", "01X XXXX XXXX", "01X XXXX XXXX"], ["ph.notes", "Placeholder: checkout notes", "Landmark, delivery time…", "علامة مميزة، وقت التوصيل…"], ["ph.address", "Placeholder: checkout address", "Street, building, floor, apartment", "الشارع، المبنى، الدور، الشقة"]];
-const fontOpts=l=>l.map(n=>`<option value="${n}">`).join('');
-views.site=()=>{const f=siteDoc.fonts||{},fi=(n,ph,l)=>`<label>${n[1]}<input data-ch="font" name="${n[0]}" list="${l}" value="${esc(f[n[0]])}" placeholder="${ph}"></label>`;
- return `<div class="bar"><h2>Website text</h2><div class="act" style="margin:0"><button class="btn g s" data-a="slang" data-id="en">English</button><button class="btn g s" data-a="slang" data-id="ar">العربية</button><button class="btn g s" data-a="strings">Buttons &amp; messages</button><button class="btn g s" data-a="gchartopen">Chart rows &amp; columns</button></div></div>
- <details class="card" style="margin-bottom:10px"><summary style="cursor:pointer">Website fonts</summary>
-  <div class="g2">${fi(['heading','Headings (English)'],'Cormorant Garamond','fl-en')}${fi(['body','Body text (English)'],'Plus Jakarta Sans','fl-en')}${fi(['arHeading','Headings (Arabic)'],'Amiri','fl-ar')}${fi(['arBody','Body text (Arabic)'],'Cairo','fl-ar')}</div>
-  <datalist id="fl-en">${fontOpts(["Cormorant Garamond", "Cormorant", "Playfair Display", "Cinzel", "Bodoni Moda", "Libre Baskerville", "Lora", "EB Garamond", "Marcellus", "Prata", "Italiana", "Bellefair", "DM Serif Display", "Plus Jakarta Sans", "Inter", "Poppins", "Montserrat", "Manrope", "DM Sans", "Lato", "Work Sans", "Jost", "Raleway", "Outfit"])}</datalist><datalist id="fl-ar">${fontOpts(["Amiri", "Cairo", "Tajawal", "Almarai", "El Messiri", "Reem Kufi", "Noto Naskh Arabic", "Changa", "Lemonada", "Markazi Text", "Aref Ruqaa", "Harmattan", "Mada", "Scheherazade New", "Lateef", "Rakkas", "Katibeh", "Jomhuria", "Vibes"])}</datalist>
-  <p class="mu">Pick from the list, or type the exact name of any font from fonts.google.com. The preview below changes straight away. An empty box keeps the default font.</p>
-  <div class="act"><button class="btn" data-a="fontsave">Save fonts</button><button class="btn g" data-a="fontreset">Back to default fonts</button></div></details>
- <div class="card row" style="position:sticky;top:64px;z-index:4;margin-bottom:10px"><span class="mu" id="sitesel">Click any text in the preview to edit it right there, including the size chart numbers. Switch English / العربية to edit each language.</span><button class="btn" id="ssave" data-a="ssave" disabled>Save Changes</button><button class="btn g s" data-a="sreset">Reset to original</button></div>
- <iframe id="sitefr" src="index.html?fekra-edit=1" style="width:100%;height:72vh;border:1px solid var(--line);border-radius:8px;background:#000"></iframe>`};
+views.site=()=>`<div class="bar"><h2>Website text</h2><div class="act" style="margin:0"><button class="btn g s" data-a="slang" data-id="en">English</button><button class="btn g s" data-a="slang" data-id="ar">العربية</button></div></div>
+ <div class="card row" style="position:sticky;top:64px;z-index:4;margin-bottom:10px"><span class="mu" id="sitesel">Click any text in the preview below to edit it right there, including the size chart and every measurement. Switch English / العربية to edit each language.</span><button class="btn" id="ssave" data-a="ssave" disabled>Save Changes</button><button class="btn g s" data-a="sreset">Reset to original</button></div>
+ <iframe id="sitefr" src="index.html?fekra-edit=1" style="width:100%;height:72vh;border:1px solid var(--line);border-radius:8px;background:#000"></iframe>`;
 const DEF_CHART_COLS=[{en:'Size',ar:'المقاس'},{en:'Chest Width (cm)',ar:'عرض الصدر (سم)'},{en:'Body Length (cm)',ar:'طول الجسم (سم)'},{en:'Shoulder Width (cm)',ar:'عرض الكتف (سم)'},{en:'Sleeve Length (cm)',ar:'طول الكم (سم)'}];
 const DEF_GARMENTS=[
  {id:'tee',order:1,name:'Boxy Tee',nameAr:'تيشيرت بوكسي',short:'Tee',price:160,builtin:'tee',visible:true,chartTab:'Boxy Cut T-Shirts',chartTabAr:'تيشيرتات بقصّة بوكسي',subtitle:'Cut in a dropped-shoulder boxy silhouette. Take your true size for a relaxed drape.',subtitleAr:'',chart:{cols:DEF_CHART_COLS,rows:[['XS','55 cm','65 cm','52 cm','21 cm'],['S','58 cm','67 cm','54 cm','22 cm'],['M','61 cm','69 cm','57 cm','23 cm'],['L','64 cm','71 cm','60 cm','24 cm'],['XL','67 cm','73 cm','62 cm','25 cm'],['XXL','70 cm','75 cm','64 cm','26 cm']]}},
@@ -182,6 +173,27 @@ function fontform(){modal(`<h3>Add a font</h3><form id="ff"><label>Name shown to
 const seedG=async()=>{const b=db.batch();DEF_GARMENTS.forEach(g=>b.set(db.collection('garments').doc(g.id),g));await b.commit()};
 async function openChart(id){if(!can('garments'))return toast('You do not have permission to edit size charts.');
  try{if(!grs.length)await seedG();go('studio');setTimeout(()=>{gform(grs.find(g=>g.id===id)||DEF_GARMENTS.find(g=>g.id===id)||grs[0]||DEF_GARMENTS[0]);const c=$('#gchart');c&&c.scrollIntoView()},250)}catch(x){fail(x)}}
+const DCOL=[['champagne','Accent color (gold: buttons, lines, highlights)','#C5A880'],['champagneDark','Accent, darker shade','#9E825B'],['obsidian','Page background','#0A0A0B'],['charcoal','Cards & panels','#131316'],['alabaster','Main text','#F4F1EA'],['stone','Soft grey text','#A39E93']];
+const DFONT=[['serif','Headings & big titles (English)','Cormorant Garamond'],['sans','Body text & buttons (English)','Plus Jakarta Sans'],['arHead','Headings (Arabic)','Amiri'],['arBody','Body text (Arabic)','Cairo']];
+const GFONTS=['Cormorant Garamond','Playfair Display','Cinzel','Lora','Libre Baskerville','DM Serif Display','Bodoni Moda','Montserrat','Poppins','Inter','Raleway','Jost','Outfit','Space Grotesk','Oswald','Bebas Neue','Plus Jakarta Sans','Amiri','Cairo','Tajawal','Almarai','Changa','El Messiri','Reem Kufi','Noto Naskh Arabic','IBM Plex Sans Arabic','Readex Pro','Lalezar','Rakkas','Harmattan'];
+views.design=()=>{const c=th.colors||{},f=th.fonts||{};return `<div class="bar"><h2>Design</h2><small class="mu">Changes show live on the right. Press Save to publish them.</small><button class="btn" data-a="dsave">Save design</button><button class="btn g s" data-a="dreset">Reset to original</button></div>
+ <div class="studio"><div id="dpanel"><div class="card sec"><h3>Colors</h3>${DCOL.map(([k,l,d])=>`<div class="row" style="margin:0 0 8px"><input type="color" data-dc="${k}" value="${esc(c[k]||d)}" style="width:50px;height:38px;padding:2px;margin:0;flex:none"><span class="mu" style="flex:1">${l}</span><button class="btn g s" data-a="dcreset" data-id="${k}" title="Back to original">↺</button></div>`).join('')}</div>
+ <div class="card sec"><h3>Fonts</h3><p class="mu" style="margin:0 0 8px">Type the exact name of any font from fonts.google.com. Leave empty for the original font.</p>
+ ${DFONT.map(([k,l,d])=>`<label>${l}<input data-df="${k}" list="gfonts" value="${esc(f[k]||'')}" placeholder="${d}" autocomplete="off"></label>`).join('')}<datalist id="gfonts">${GFONTS.map(x=>`<option value="${x}">`).join('')}</datalist></div></div>
+ <iframe id="dfr" src="index.html?fekra-design=1"></iframe></div>`};
+const dCollect=()=>{const colors={},fonts={};document.querySelectorAll('[data-dc]').forEach(i=>{const d=DCOL.find(x=>x[0]===i.dataset.dc)[2];if(i.value.toLowerCase()!==d.toLowerCase())colors[i.dataset.dc]=i.value});
+ document.querySelectorAll('[data-df]').forEach(i=>{const v=i.value.trim();if(v)fonts[i.dataset.df]=v});return{colors,fonts}};
+let dT;const dSend=()=>{clearTimeout(dT);dT=setTimeout(()=>{const f=$('#dfr');try{f&&f.contentWindow.postMessage({src:'fekra-admin',type:'theme',theme:dCollect()},location.origin)}catch(x){}},120)};
+async function saveChartEdit(m){if(!can('garments'))return toast('You do not have permission to edit the size chart.');
+ try{if(!grs.length)await seedG();const base=grs.find(x=>x.id===m.gid)||DEF_GARMENTS.find(x=>x.id===m.gid);if(!base)throw Error('Garment not found');
+  const g=JSON.parse(JSON.stringify(base)),ch=g.chart,d={};
+  if(m.kind==='cell'){(ch.rows[m.r]=ch.rows[m.r]||[])[m.c]=m.text}
+  else if(m.kind==='head'){ch.cols[m.c][m.lang==='ar'?'ar':'en']=m.text}
+  else if(m.kind==='tab'){d[m.lang==='ar'?'chartTabAr':'chartTab']=m.text}
+  else{d[m.lang==='ar'?'subtitleAr':'subtitle']=m.text}
+  const ref=db.collection('garments').doc(m.gid);
+  await ref.set({...d,chart:ch,builtin:g.builtin||FV.delete(),updatedAt:FV.serverTimestamp(),updatedBy:me.username},{merge:true});
+  const sv=$('#ssave');if(sv)sv.disabled=true;toast('Changes saved')}catch(x){fail(x)}}
 views.staff=()=>`<div class="bar"><h2>Team</h2><button class="btn" data-a="snew">+ Add team member</button></div>`+
  stf.map(u=>`<div class="card"><div class="row"><b>${esc(u.username)}</b><span class="tag">${esc(u.role)}</span>${u.active===false?'<span class="tag cancelled">disabled</span>':''}${u.id===me.id?'<span class="mu">(you)</span>':''}</div>`+
  (u.role==='owner'?'<p class="mu" style="margin:0">Full access</p>':`<div class="perms">${Object.entries(PERMS).map(([k,v])=>`<label class="ck"><input type="checkbox" data-ch="perm" data-id="${u.id}" data-k="${k}" ${(u.perms||[]).includes(k)?'checked':''}> ${v}</label>`).join('')}</div>`)+
@@ -314,33 +326,12 @@ async function sweep(){const cut=firebase.firestore.Timestamp.fromMillis(Date.no
  for(;;){const q=await db.collection('orders').where('createdAt','<',cut).limit(400).get();if(q.empty)break;const b=db.batch();q.docs.forEach(d=>b.delete(d.ref));await b.commit();n+=q.size;if(q.size<400)break}return n}
 
 // ---------- website text editor (talks to the preview iframe) ----------
-async function saveChartEdit(m){try{if(!can('garments'))return toast('You need the Bespoke Studio permission to edit size charts.');
- const [,id,kind,a,b]=m.key.split('|'),text=String(m.html||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
- if(!grs.length)await seedG();
- const g=grs.find(x=>x.id===id)||DEF_GARMENTS.find(x=>x.id===id);if(!g)throw Error('Garment not found');
- const ch=g.chart||{cols:DEF_CHART_COLS,rows:[]},cols=ch.cols.map(c=>({...c})),rows=(ch.rows||[]).map(r=>r.slice()),d={};
- if(kind==='cell'){while(rows.length<=+a)rows.push([]);while(rows[+a].length<=+b)rows[+a].push('');rows[+a][+b]=text;d.chart={cols,rows}}
- else if(kind==='h'){if(!text&&b==='en')throw Error('A column title cannot be empty.');cols[+a][b]=text;d.chart={cols,rows}}
- else if(kind==='tab')d[b==='ar'?'chartTabAr':'chartTab']=text;
- else d[b==='ar'?'subtitleAr':'subtitle']=text;
- d.updatedAt=FV.serverTimestamp();d.updatedBy=me.username;
- await db.collection('garments').doc(id).set(d,{merge:true});toast('Size chart saved');const sv=$('#ssave');if(sv)sv.disabled=true;
- setTimeout(()=>{const w=frame();if(w){w.location.hash='size-chart';w.location.reload()}},500)}catch(x){fail(x)}}
-const readFonts=()=>{const o={};['heading','body','arHeading','arBody'].forEach(n=>{const el=document.querySelector('[data-ch=font][name='+n+']'),v=el&&el.value.trim();if(v)o[n]=v});return o};
-function strform(){const so2=siteDoc.strings||{};
- modal(`<h3>Buttons &amp; messages</h3><p class="mu">Everything the website says that is not a normal text block: cart, checkout and notices. An empty box keeps the default shown in grey. Keep words in {braces}, they are filled in automatically.</p>
- <form id="stf"><div style="max-height:62vh;overflow:auto">${STRS.map(([k,l,en,ar])=>`<div class="card" style="margin:8px 0"><b>${esc(l)}</b><div class="g2"><label>English<textarea name="en_${k}" style="min-height:48px" placeholder="${esc(en)}">${esc((so2[k]||{}).en)}</textarea></label><label>العربية<textarea dir="rtl" name="ar_${k}" style="min-height:48px" placeholder="${esc(ar)}">${esc((so2[k]||{}).ar)}</textarea></label></div></div>`).join('')}</div>
- <div class="act" style="margin-top:14px"><button class="btn">Save</button><button type="button" class="btn g" data-a="close">Cancel</button></div></form>`);
- $('#mb').style.maxWidth='900px';
- $('#stf').onsubmit=async e=>{e.preventDefault();const E=e.target.elements,o={};
-  STRS.forEach(([k])=>{const en=E['en_'+k].value.trim(),ar=E['ar_'+k].value.trim();if(en||ar)o[k]={...(en?{en}:{}),...(ar?{ar}:{})}});
-  try{const ref=db.collection('content').doc('site');try{await ref.update({strings:o})}catch(x){await ref.set({strings:o},{merge:true})}siteDoc.strings=o;closeM();toast('Saved. Refresh the preview to see it.')}catch(x){fail(x)}}}
 let cur=null;const frame=()=>{const f=$('#sitefr');return f&&f.contentWindow},tell=m=>{const f=frame();if(f)f.postMessage({src:'fekra-admin',...m},location.origin)};
 window.addEventListener('message',e=>{const m=e.data;if(e.origin!==location.origin||!m||m.src!=='fekra')return;const sel=$('#sitesel'),sv=$('#ssave');
  if(m.type==='select'){cur={key:m.key,lang:m.lang};if(sel)sel.innerHTML='Editing <b>'+(m.lang==='ar'?'Arabic':'English')+'</b>: '+esc(m.label);if(sv)sv.disabled=true}
  else if(m.type==='dirty'){if(sv)sv.disabled=false}
- else if(m.type==='chart')openChart(m.id)
- else if(m.type==='html'&&String(m.key).startsWith('chart|'))saveChartEdit(m)
+ else if(m.type==='chartsave')saveChartEdit(m)
+ else if(m.type==='ready')dSend()
  else if(m.type==='html')db.collection('content').doc('site').set({texts:{[m.key]:{[m.lang]:m.html,o:m.o}}},{merge:true}).then(()=>{toast('Changes saved');if(sv)sv.disabled=true;tell({type:'saved',key:m.key,lang:m.lang,o:m.o,html:m.html})}).catch(fail)});
 
 // ---------- clicks ----------
@@ -349,6 +340,9 @@ const acts={tab:(id)=>go(id),close:closeM,out:()=>auth.signOut(),
  carch:id=>{const c=chs.find(x=>x.id===id);db.collection('chapters').doc(id).update({archived:!c.archived}).then(()=>toast(c.archived?'Chapter restored':'Chapter archived: hidden from the website')).catch(fail)},
  paddcol:()=>$('#pcols').insertAdjacentHTML('beforeend',colRow({})),pdelcol:(id,t)=>t.closest('.pcr').remove(),
  coledit:id=>colform(cols.find(c=>c.id===id)||{}),
+ dcreset:id=>{const i=document.querySelector('[data-dc="'+id+'"]');i.value=DCOL.find(x=>x[0]===id)[2];dSend()},
+ dsave:()=>db.collection('content').doc('theme').set({...dCollect(),updatedBy:me.username}).then(()=>toast('Design saved. Visitors see it on their next visit.')).catch(fail),
+ dreset:()=>confirm('Go back to the original colors and fonts?')&&db.collection('content').doc('theme').delete().then(()=>{th={};render();toast('Reset to original')}).catch(fail),
  gedit:id=>gform(grs.find(g=>g.id===id)||{}),
  gaddrow:()=>{gSync();gc.rows.push(gc.cols.map(()=>''));gDraw()},
  gdelrow:id=>{gSync();gc.rows.splice(+id,1);gDraw()},
@@ -362,12 +356,9 @@ const acts={tab:(id)=>go(id),close:closeM,out:()=>auth.signOut(),
   try{const ref=db.collection('garments').doc(id),b=db.batch();(await ref.collection('chunks').get()).docs.forEach(x=>b.delete(x.ref));b.delete(ref);await b.commit();toast('Deleted')}catch(x){fail(x)}},
  pedit:id=>pform(prs.find(p=>p.id===id)||{}),cedit:id=>cform(chs.find(c=>c.id===id)||{}),snew:sform,elogin:eform,setup:setupForm,
  coldel:id=>confirm('Delete this color? Products that used it simply stop showing it.')&&db.collection('colors').doc(id).delete().then(()=>toast('Deleted')).catch(fail),
- strings:strform,gchartopen:()=>openChart(cur&&String(cur.key).startsWith('chart|')?cur.key.split('|')[1]:'tee'),
- fontsave:async()=>{try{const f=readFonts();await db.collection('content').doc('site').set({fonts:Object.keys(f).length?f:FV.delete()},{merge:true});siteDoc.fonts=f;toast('Fonts saved')}catch(x){fail(x)}},
- fontreset:async()=>{try{await db.collection('content').doc('site').set({fonts:FV.delete()},{merge:true});siteDoc.fonts={};render();toast('Back to the default fonts')}catch(x){fail(x)}},
  slang:id=>{cur=null;tell({type:'lang',lang:id})},
  ssave:()=>cur?tell({type:'getHtml'}):toast('Click a text in the preview first'),
- sreset:async()=>{if(!cur)return toast('Click a text in the preview first');if(String(cur.key).startsWith('chart|'))return toast('Size chart cells have no original. Just type the value you want.');if(!confirm('Remove your edit and go back to the original text?'))return;
+ sreset:async()=>{if(!cur)return toast('Click a text in the preview first');if(!confirm('Remove your edit and go back to the original text?'))return;
   try{await db.collection('content').doc('site').update(new firebase.firestore.FieldPath('texts',cur.key,cur.lang),FV.delete());tell({type:'reset',key:cur.key,lang:cur.lang});toast('Reset to original')}catch(x){fail(x)}},
  pdel:id=>confirm('Delete this product for good?')&&db.collection('products').doc(id).delete().then(()=>toast('Deleted')).catch(fail),
  cdel:async id=>{try{if(!(await db.collection('products').where('category','==',id).limit(1).get()).empty)return alert('This chapter still has products. Move or delete them first.');
@@ -375,11 +366,11 @@ const acts={tab:(id)=>go(id),close:closeM,out:()=>auth.signOut(),
  stoggle:id=>db.collection('users').doc(id).update({active:stf.find(u=>u.id===id).active===false}).catch(fail),
  sdel:id=>{const u=stf.find(x=>x.id===id);confirm('Remove this person? They will lose all access.')&&db.batch().delete(db.collection('users').doc(id)).delete(db.collection('logins').doc(u.username)).commit().catch(fail)}};
 document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(t&&acts[t.dataset.a]){e.preventDefault();acts[t.dataset.a](t.dataset.id,t)}});
+document.addEventListener('input',e=>{if(e.target.dataset&&(e.target.dataset.dc||e.target.dataset.df))dSend()});
 document.addEventListener('change',e=>{const t=e.target,k=t.dataset.ch;if(!k)return;
  if(k==='of'){of=t.value;render()}else if(k==='oq'){oq=t.value.trim().toLowerCase();render()}
  else if(k==='st')db.collection('orders').doc(t.dataset.id).update({status:t.value,statusBy:me.username,statusAt:FV.serverTimestamp()}).then(()=>toast('Status updated')).catch(fail);
  else if(k==='feat')saveOpt({features:{[t.dataset.k]:t.checked}});
- else if(k==='font')tell({type:'fonts',fonts:readFonts()})
  else if(k==='perm')db.collection('users').doc(t.dataset.id).update({perms:t.checked?FV.arrayUnion(t.dataset.k):FV.arrayRemove(t.dataset.k)}).catch(fail)});
 document.addEventListener('submit',async e=>{if(e.target.id!=='sf')return;e.preventDefault();const E=e.target.elements;
  const d={whatsapp:E.whatsapp.value.replace(/\D/g,''),whatsappDisplay:E.whatsappDisplay.value.trim(),instagram:E.instagram.value.replace('@','').trim(),shippingFee:+E.shippingFee.value||0,cloudName:E.cloudName.value.trim(),uploadPreset:E.uploadPreset.value.trim()};
