@@ -193,16 +193,25 @@ function dCloud(d){const x=d.exists?d.data():{},first=!dLoaded;ds=x.list||[];dac
  if(first&&dLoaded){if(tab==='design')render();if(Object.keys(drafts).length)dSync()}else if(tab==='design'&&$('#dtabs'))dRefresh()}
 const dStatText=()=>dErr?'<b style="color:var(--red)">'+(Object.keys(drafts).length?'Not saved online (kept on this device only): ':'Online save failed: ')+esc(dErr.code||dErr.message)+'</b> <a href="#" data-a="dretry">Retry</a>':!dLoaded?'Loading designs…':dBusy||Object.keys(drafts).length?'Saving…':'✓ All designs saved';
 const dStatus=()=>{const e=$('#dstat');if(e)e.innerHTML=dStatText()};
-const dHas=v=>v&&(Object.keys(v.colors||{}).length||Object.keys(v.fonts||{}).length);
+const FX=[['gradient','Gradient accent','Buttons and highlights blend into the second color'],['shine','Metallic shine','A light sweeps across buttons and big titles'],['glow','Glow','Soft halo around buttons and hovered products'],['backdrop','Background light','Colored light in the page corners']];
+const FXP=[['Liquid gold','#D4AF37','#A8832A','#FFF1B8'],['Sunset','#FF7A59','#D9534F','#FFC15E'],['Neon night','#8B5CF6','#6D28D9','#22D3EE'],['Emerald','#34D399','#059669','#A7F3D0'],['Rose','#F472B6','#DB2777','#FDBA74']];
+const dFx=e=>{e=e||{};return `<div class="card sec"><h3>Effects</h3><p class="mu" style="margin:0 0 8px">One click styles (they also change the accent color):</p>
+ <div class="row">${FXP.map((p,i)=>`<button class="btn s" data-a="fxpreset" data-id="${i}" style="background:linear-gradient(120deg,${p[1]},${p[3]});color:#111;border:0">${p[0]}</button>`).join('')}<button class="btn g s" data-a="fxoff">No effects</button></div>
+ ${FX.map(([k,l,d])=>`<label class="ck"><input type="checkbox" data-fx="${k}" ${e[k]?'checked':''}> <b>${l}</b> <span class="mu">${d}</span></label>`).join('')}
+ <div class="row" style="margin:12px 0 0"><span class="mu" style="flex:none">Second color</span><input type="color" data-fx="color2" value="${esc(e.color2||'#FF7A59')}" style="width:50px;height:36px;padding:2px;margin:0;flex:none"><span class="mu" style="flex:none">Strength</span><input type="range" data-fx="strength" min="10" max="100" value="${+e.strength||60}" style="flex:1;margin:0;padding:0"></div></div>`};
+const dStable=v=>JSON.stringify(v||{},(k,x)=>x&&typeof x==='object'&&!Array.isArray(x)?Object.fromEntries(Object.entries(x).sort()):x);
+const dTheme=v=>({colors:v.colors||{},fonts:v.fonts||{},effects:v.effects||{}});
+const dHas=v=>v&&(Object.keys(v.colors||{}).length||Object.keys(v.fonts||{}).length||Object.keys(v.effects||{}).length);
 const dEditor=v=>{const cp=v;v=v||{};const c=v.colors||{},f=v.fonts||{};return `<p class="mu" style="margin:0 0 10px">Editing: <b style="color:var(--tx)">${cp?esc(cp.name):'Original design'}</b></p>
  <div class="card sec"><h3>Colors</h3>${DCOL.map(([k,l,d])=>`<div class="row" style="margin:0 0 8px"><input type="color" data-dc="${k}" value="${esc(c[k]||d)}" style="width:50px;height:38px;padding:2px;margin:0;flex:none"><input type="text" data-dx="${k}" value="${esc((c[k]||d).toUpperCase())}" maxlength="7" spellcheck="false" placeholder="#C5A880" style="width:100px;margin:0;font-family:monospace;text-transform:uppercase"><span class="mu" style="flex:1">${l}</span><button class="btn g s" data-a="dcreset" data-id="${k}" title="Back to original">↺</button></div>`).join('')}</div>
+ ${dFx(v.effects)}
  <div class="card sec"><h3>Fonts</h3><p class="mu" style="margin:0 0 8px">Type the exact name of any font from fonts.google.com. Leave empty for the original font.</p>
  ${DFONT.map(([k,l,d])=>`<label>${l}<input data-df="${k}" list="gfonts" value="${esc(f[k]||'')}" placeholder="${d}" autocomplete="off"></label>`).join('')}<datalist id="gfonts">${GFONTS.map(x=>`<option value="${x}">`).join('')}</datalist></div>`};
 const dAll=()=>ds.map(x=>drafts[x.id]||x).concat(Object.values(drafts).filter(d=>!ds.some(x=>x.id===d.id)));
 const dTabs=()=>{const tabEl=(id,name,x)=>`<div class="dtab${(dcur||'orig')===id?' on':''}" data-a="dedit" data-id="${esc(id)}" title="${esc(name)}">${(id==='orig'?!dact:dact===id)?'<i title="Live on website">●</i>':''}<span>${esc(name)}</span>${x?`<a data-a="ddel" data-id="${esc(id)}" title="Delete design">✕</a>`:''}</div>`;
  return tabEl('orig','Original design')+dAll().map(x=>tabEl(x.id,x.name,true)).join('')+'<button class="dplus" data-a="dnew" title="New design">+</button>'};
 const dActions=()=>{const p=dById(dcur),id=p?esc(p.id):'orig',live=p?dact===p.id:!dact;
- const changed=p&&live&&JSON.stringify([p.colors||{},p.fonts||{}])!==JSON.stringify([th.colors||{},th.fonts||{}]);
+ const changed=p&&live&&dStable(dTheme(p))!==dStable(dTheme(th));
  return (live&&!changed?'<span class="tag confirmed">live on website</span>':`<button class="btn s" data-a="duse" data-id="${id}">${changed?'Update website':'Use on website'}</button>`)+
  (p?`<button class="btn g s" data-a="ddup" data-id="${id}">Duplicate</button><button class="btn g s" data-a="dren" data-id="${id}">Rename</button><button class="btn r s" data-a="ddel" data-id="${id}">Delete</button>`:'<span class="mu">Change anything here and it is saved as a new tab.</span>')+
  (!dAll().length&&dHas(th)?'<button class="btn g s" data-a="dimport">Save the current live design as a tab</button>':'')};
@@ -212,9 +221,11 @@ views.design=()=>{if(!dinit&&dLoaded){dinit=true;if(!dById(dcur))dcur=dById(dact
  <div class="studio"><div id="dpanel"><div id="deditor">${dEditor(dById(dcur))}</div></div>
  <iframe id="dfr" src="index.html?fekra-design=1"></iframe></div>`};
 const dCollect=()=>{const colors={},fonts={};document.querySelectorAll('[data-dc]').forEach(i=>{const d=DCOL.find(x=>x[0]===i.dataset.dc)[2];if(i.value.toLowerCase()!==d.toLowerCase())colors[i.dataset.dc]=i.value});
- document.querySelectorAll('[data-df]').forEach(i=>{const v=i.value.trim();if(v)fonts[i.dataset.df]=v});return{colors,fonts}};
+ document.querySelectorAll('[data-df]').forEach(i=>{const v=i.value.trim();if(v)fonts[i.dataset.df]=v});const effects={},q=k=>document.querySelector('[data-fx="'+k+'"]');
+ FX.forEach(([k])=>{if(q(k)&&q(k).checked)effects[k]=true});if(Object.keys(effects).length){effects.color2=q('color2').value;effects.strength=+q('strength').value}
+ return{colors,fonts,effects}};
 const dId=n=>(slug(n)||'design')+'-'+Math.random().toString(36).slice(2,6);
-const publish=p=>dHas(p)?db.collection('content').doc('theme').set({colors:p.colors||{},fonts:p.fonts||{},updatedBy:me.username}):db.collection('content').doc('theme').delete();
+const publish=p=>dHas(p)?db.collection('content').doc('theme').set({...dTheme(p),updatedBy:me.username}):db.collection('content').doc('theme').delete();
 const dRefresh=()=>{const t=$('#dtabs');if(t)t.innerHTML=dTabs();const a=$('#dact');if(a)a.innerHTML=dActions();dStatus()};
 // every write goes through here; drafts are cleared only after the server confirms them
 async function dCommit(list,active){if(!dLoaded)throw Error('Designs are still loading, try again in a moment');
@@ -226,7 +237,7 @@ const dSync=()=>{clearTimeout(dTimer);if(dLoaded&&Object.keys(drafts).length)dCo
 const dPut=p=>{drafts[p.id]=p;dKeep();dRefresh();clearTimeout(dTimer);dTimer=setTimeout(dSync,800)};
 const dShow=id=>{dcur=id;dKeep();$('#deditor').innerHTML=dEditor(dById(id));dRefresh();dSend()};
 const dNextName=()=>{let n=1;while(dAll().some(x=>x.name==='Design '+n))n++;return 'Design '+n};
-function dAdd(name,v){const id=dId(name);dcur=id;dPut({id,name,colors:v.colors||{},fonts:v.fonts||{}});return id}
+function dAdd(name,v){const id=dId(name);dcur=id;dPut({id,name,...dTheme(v)});return id}
 function dChanged(){dSend();const v=dCollect(),p=dById(dcur);
  if(p)dPut({...p,...v});else if(dHas(v)){dAdd(dNextName(),v);const h=$('#deditor b');if(h)h.textContent=dById(dcur).name}}
 let dT;const dSend=()=>{clearTimeout(dT);dT=setTimeout(()=>{const f=$('#dfr');try{f&&f.contentWindow.postMessage({src:'fekra-admin',type:'theme',theme:dCollect()},location.origin)}catch(x){}},120)};
@@ -387,15 +398,18 @@ const acts={tab:(id)=>go(id),close:closeM,out:()=>auth.signOut(),
  paddcol:()=>$('#pcols').insertAdjacentHTML('beforeend',colRow({})),pdelcol:(id,t)=>t.closest('.pcr').remove(),
  coledit:id=>colform(cols.find(c=>c.id===id)||{}),
  dcreset:id=>{const i=document.querySelector('[data-dc="'+id+'"]');i.value=DCOL.find(x=>x[0]===id)[2];const x=document.querySelector('[data-dx="'+id+'"]');if(x)x.value=i.value.toUpperCase();dChanged()},
+ fxpreset:id=>{const p=FXP[id],set=(k,v)=>{document.querySelector('[data-dc="'+k+'"]').value=v.toLowerCase();document.querySelector('[data-dx="'+k+'"]').value=v};set('champagne',p[1]);set('champagneDark',p[2]);
+  document.querySelector('[data-fx=color2]').value=p[3].toLowerCase();FX.forEach(([k])=>document.querySelector('[data-fx='+k+']').checked=true);dChanged()},
+ fxoff:()=>{FX.forEach(([k])=>document.querySelector('[data-fx='+k+']').checked=false);dChanged()},
  dedit:id=>{const now=Date.now(),twice=acts.last===id&&now-acts.at<450;acts.last=id;acts.at=twice?0:now;if(twice&&id!=='orig')return acts.dren(id);dShow(id==='orig'?null:id)},
  dnew:()=>{dAdd(dNextName(),{});dShow(dcur)},
  dretry:()=>{dErr=null;dStatus();Object.keys(drafts).length?dSync():dCommit(dAll()).catch(fail)},
- duse:async id=>{try{const p=id==='orig'?null:dById(id);if(!dLoaded)return toast('Still loading, try again');await publish(p);if(p)th={colors:p.colors,fonts:p.fonts};else th={};await dCommit(dAll(),p?p.id:'');toast(p?'"'+p.name+'" is now live':'Original design is now live')}catch(x){fail(x)}},
+ duse:async id=>{try{const p=id==='orig'?null:dById(id);if(!dLoaded)return toast('Still loading, try again');await publish(p);if(p)th=dTheme(p);else th={};await dCommit(dAll(),p?p.id:'');toast(p?'"'+p.name+'" is now live':'Original design is now live')}catch(x){fail(x)}},
  ddup:id=>{const p=dById(id);dAdd(p.name+' copy',JSON.parse(JSON.stringify(p)));dShow(dcur)},
  dren:id=>{const p=dById(id),n=p&&prompt('New name',p.name);if(n&&n.trim()){dPut({...p,name:n.trim()});if(dcur===id)dShow(id)}},
  ddel:id=>{const p=dById(id);if(!dLoaded)return toast('Still loading, try again');if(!confirm('Delete the design "'+p.name+'"?'+(dact===id?' It is live right now: the website keeps looking the same until you pick another design.':'')))return;
   const list=dAll().filter(x=>x.id!==id);delete drafts[id];dKeep();if(dcur===id)dShow(null);dCommit(list,dact===id?'':dact).then(()=>toast('Deleted')).catch(fail)},
- dimport:()=>{dAdd(dNextName(),{colors:th.colors,fonts:th.fonts});dShow(dcur)},
+ dimport:()=>{dAdd(dNextName(),th);dShow(dcur)},
  gedit:id=>gform(grs.find(g=>g.id===id)||{}),
  gaddrow:()=>{gSync();gc.rows.push(gc.cols.map(()=>''));gDraw()},
  gdelrow:id=>{gSync();gc.rows.splice(+id,1);gDraw()},
@@ -423,7 +437,7 @@ document.addEventListener('input',e=>{const t=e.target,d=t.dataset||{};
  if(d.dx){let v=t.value.trim().replace(/^#?/,'#');if(/^#[0-9a-f]{3}$/i.test(v))v='#'+v.slice(1).split('').map(x=>x+x).join('');
   if(/^#[0-9a-f]{6}$/i.test(v)){const p=document.querySelector('[data-dc="'+d.dx+'"]');p.value=v.toLowerCase();dChanged()}}
  else if(d.dc){const x=document.querySelector('[data-dx="'+d.dc+'"]');if(x)x.value=t.value.toUpperCase();dChanged()}
- else if(d.df)dChanged()});
+ else if(d.df||d.fx)dChanged()});
 document.addEventListener('focusout',e=>{const d=e.target.dataset||{};if(d.dx){const p=document.querySelector('[data-dc="'+d.dx+'"]');e.target.value=p.value.toUpperCase()}});
 document.addEventListener('change',e=>{const t=e.target,k=t.dataset.ch;if(!k)return;
  if(k==='of'){of=t.value;render()}else if(k==='oq'){oq=t.value.trim().toLowerCase();render()}

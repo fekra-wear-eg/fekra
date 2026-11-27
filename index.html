@@ -135,6 +135,23 @@ html[lang=ar] em,html[lang=ar] .italic{font-style:normal!important}
 html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
 </style>
 
+<style id="fekra-fx">
+/* Effects chosen in the admin "Design" tab. Nothing here applies unless switched on. */
+html.fx-grad{--fx-base:linear-gradient(120deg,rgb(var(--c-champagne)),rgb(var(--fx-c2)) 55%,rgb(var(--c-champagne)))}
+html.fx-grad .bg-champagne{background-image:var(--fx-base)}
+html.fx-shine :is(a,button).bg-champagne{background-image:linear-gradient(110deg,transparent 40%,rgb(255 255 255/var(--fx-a)) 50%,transparent 60%),var(--fx-base,linear-gradient(transparent,transparent));background-size:250% 100%,100% 100%;background-repeat:no-repeat;animation:fxSweep 3.6s linear infinite}
+html.fx-shine :is(h1,h2){background-image:linear-gradient(110deg,rgb(var(--c-alabaster)) 42%,rgb(var(--c-champagne)) 50%,rgb(var(--c-alabaster)) 58%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:fxText 6s linear infinite}
+html.fx-shine h1.animate-fade-up{animation:fadeUp 1s cubic-bezier(.16,1,.3,1) forwards,fxText 6s linear infinite}
+html.fx-shine :is(h1,h2) *{-webkit-text-fill-color:currentColor}
+html.fx-grad :is(span,em,p).text-champagne:not(:has(*)),html.fx-grad :is(h1,h2) :is(span,em).text-champagne:not(:has(*)){background-image:linear-gradient(100deg,rgb(var(--c-champagne)),rgb(var(--fx-c2)));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+html.fx-glow :is(a,button).bg-champagne{box-shadow:0 0 var(--fx-r) rgb(var(--c-champagne)/var(--fx-a))}
+html.fx-glow :is(a,button).bg-champagne:hover,html.fx-glow #lookbook-grid>*:hover{box-shadow:0 0 calc(var(--fx-r)*1.8) rgb(var(--fx-c2)/var(--fx-a))}
+html.fx-bg body::before{content:"";position:fixed;inset:0;z-index:30;pointer-events:none;mix-blend-mode:screen;opacity:var(--fx-o);background:radial-gradient(60% 50% at 0% 0%,rgb(var(--c-champagne)),transparent 70%),radial-gradient(60% 55% at 100% 100%,rgb(var(--fx-c2)),transparent 70%)}
+@keyframes fxSweep{from{background-position:150% 0,0 0}to{background-position:-100% 0,0 0}}
+@keyframes fxText{from{background-position:150% 0}to{background-position:-100% 0}}
+@media(prefers-reduced-motion:reduce){html.fx-shine :is(a,button).bg-champagne,html.fx-shine h2,html.fx-shine h1{animation-play-state:paused}}
+</style>
+
     <script>
     // Site design (colours + fonts) saved in the admin "Design" tab. Applied immediately from a local copy so nothing flashes.
     (function () {
@@ -147,6 +164,15 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
             ['obsidian', 'charcoal', 'alabaster', 'stone', 'champagne', 'champagneDark'].forEach(function (k) {
                 var v = rgb(c[k]); if (v) root.style.setProperty('--c-' + k, v); else root.style.removeProperty('--c-' + k);
             });
+            var e = t.effects || {}, on = e.gradient || e.shine || e.glow || e.backdrop;
+            ['gradient:fx-grad', 'shine:fx-shine', 'glow:fx-glow', 'backdrop:fx-bg'].forEach(function (p) { p = p.split(':'); root.classList.toggle(p[1], !!e[p[0]]); });
+            if (on) {
+                var k = Math.max(0.1, Math.min(1, (e.strength == null ? 60 : e.strength) / 100));
+                root.style.setProperty('--fx-c2', rgb(e.color2) || '255 122 89');
+                root.style.setProperty('--fx-a', (0.2 + 0.6 * k).toFixed(2));
+                root.style.setProperty('--fx-r', Math.round(8 + 28 * k) + 'px');
+                root.style.setProperty('--fx-o', (0.05 + 0.25 * k).toFixed(2));
+            }
             var fam = {};
             Object.keys(FONTS).forEach(function (k) {
                 var name = (k === 'arabic' ? f.arHead : f[k]); name = name && String(name).replace(/["<>;{}]/g, '').trim();
