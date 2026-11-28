@@ -137,27 +137,27 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
 
 <style id="fekra-fx">
 /* Effects chosen in the admin "Design" tab. Static: nothing moves. */
-html{--metal:linear-gradient(110deg,transparent 18%,rgb(255 255 255/var(--fx-a)) 34%,transparent 47%,rgb(0 0 0/.22) 60%,transparent 70%,rgb(255 255 255/var(--fx-a)) 84%,transparent 94%);--blend:linear-gradient(110deg,rgb(var(--c-champagne)),rgb(var(--fx-c2)) 55%,rgb(var(--c-champagne)))}
+html{--metal:linear-gradient(110deg,transparent 18%,rgb(255 255 255/var(--fx-a)) 34%,transparent 47%,rgb(0 0 0/.22) 60%,transparent 70%,rgb(255 255 255/var(--fx-a)) 84%,transparent 94%);--blend:linear-gradient(110deg,rgb(var(--c-champagne)),rgb(var(--fx-g2)) 55%,rgb(var(--c-champagne)))}
 html.fx-shine-buttons :is(a,button).bg-champagne{--s:var(--metal)}
 html.fx-gradient-buttons :is(a,button).bg-champagne{--g:var(--blend)}
 html.fx-shine-titles :is(h1,h2){--s:var(--metal)}
 html.fx-gradient-titles :is(h1,h2){--g:var(--blend)}
 html.fx-shine-words :is(span,em,p).text-champagne:not(:has(*)){--s:var(--metal)}
 html.fx-gradient-words :is(span,em,p).text-champagne:not(:has(*)){--g:var(--blend)}
-html.fx-shine-cards #lookbook-grid>*::after{--s:var(--metal)}
-html.fx-gradient-cards #lookbook-grid>*::after{--g:var(--blend)}
-html.fx-shine-background body::before{--s:var(--metal)}
-html.fx-gradient-background body::before{--g:var(--blend)}
+html.fx-shine-cards #lookbook-grid>*::after{--s:linear-gradient(110deg,transparent 18%,rgb(255 255 255/var(--fx-so)) 34%,transparent 47%,transparent 70%,rgb(255 255 255/var(--fx-so)) 84%,transparent 94%)}
+html.fx-gradient-cards #lookbook-grid>*::after{--g:linear-gradient(110deg,rgb(var(--c-champagne)/var(--fx-go)),rgb(var(--fx-g2)/var(--fx-go)))}
+html.fx-shine-background body::before{--s:linear-gradient(110deg,transparent 18%,rgb(255 255 255/var(--fx-so)) 34%,transparent 47%,transparent 70%,rgb(255 255 255/var(--fx-so)) 84%,transparent 94%)}
+html.fx-gradient-background body::before{--g:linear-gradient(110deg,rgb(var(--c-champagne)/var(--fx-go)),rgb(var(--fx-g2)/var(--fx-go)))}
 html:is(.fx-gradient-buttons,.fx-shine-buttons) :is(a,button).bg-champagne{background-image:var(--s,linear-gradient(#0000,#0000)),var(--g,linear-gradient(#0000,#0000))}
-html.fx-glow-buttons :is(a,button).bg-champagne{box-shadow:0 0 var(--fx-r) rgb(var(--c-champagne)/var(--fx-a))}
+html.fx-glow-buttons :is(a,button).bg-champagne{box-shadow:0 0 var(--fx-r) rgb(var(--c-champagne)/var(--fx-la))}
 html:is(.fx-gradient-titles,.fx-shine-titles) :is(h1,h2),html:is(.fx-gradient-words,.fx-shine-words) :is(span,em,p).text-champagne:not(:has(*)){background-image:var(--s,linear-gradient(#0000,#0000)),var(--g,linear-gradient(#0000,#0000));background-color:rgb(var(--c-champagne));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
 html:is(.fx-gradient-titles,.fx-shine-titles) :is(h1,h2) *{-webkit-text-fill-color:currentColor}
-html.fx-glow-titles :is(h1,h2),html.fx-glow-words :is(span,em,p).text-champagne:not(:has(*)){filter:drop-shadow(0 0 calc(var(--fx-r)*.6) rgb(var(--c-champagne)/var(--fx-a)))}
+html.fx-glow-titles :is(h1,h2),html.fx-glow-words :is(span,em,p).text-champagne:not(:has(*)){filter:drop-shadow(0 0 calc(var(--fx-r)*.6) rgb(var(--c-champagne)/var(--fx-la)))}
 html:is(.fx-gradient-cards,.fx-shine-cards) #lookbook-grid>*{position:relative}
-html:is(.fx-gradient-cards,.fx-shine-cards) #lookbook-grid>*::after{content:"";position:absolute;inset:0;pointer-events:none;background-image:var(--s,linear-gradient(#0000,#0000)),var(--g,linear-gradient(#0000,#0000));opacity:calc(var(--fx-o)*1.4);mix-blend-mode:screen}
-html.fx-glow-cards #lookbook-grid>*{box-shadow:0 0 var(--fx-r) rgb(var(--fx-c2)/calc(var(--fx-a)*.7))}
-html.fx-glow-background body::before{--l:radial-gradient(60% 50% at 0% 0%,rgb(var(--c-champagne)),transparent 70%),radial-gradient(60% 55% at 100% 100%,rgb(var(--fx-c2)),transparent 70%)}
-html:is(.fx-gradient-background,.fx-shine-background,.fx-glow-background) body::before{content:"";position:fixed;inset:0;z-index:30;pointer-events:none;mix-blend-mode:screen;opacity:var(--fx-o);background-image:var(--s,linear-gradient(#0000,#0000)),var(--g,linear-gradient(#0000,#0000)),var(--l,linear-gradient(#0000,#0000))}
+html:is(.fx-gradient-cards,.fx-shine-cards) #lookbook-grid>*::after{content:"";position:absolute;inset:0;pointer-events:none;background-image:var(--s,linear-gradient(#0000,#0000)),var(--g,linear-gradient(#0000,#0000));mix-blend-mode:screen}
+html.fx-glow-cards #lookbook-grid>*{box-shadow:0 0 var(--fx-r) rgb(var(--fx-c2)/var(--fx-la))}
+html.fx-glow-background body::before{--l:radial-gradient(60% 50% at 0% 0%,rgb(var(--c-champagne)/var(--fx-lo)),transparent 70%),radial-gradient(60% 55% at 100% 100%,rgb(var(--fx-c2)/var(--fx-lo)),transparent 70%)}
+html:is(.fx-gradient-background,.fx-shine-background,.fx-glow-background) body::before{content:"";position:fixed;inset:0;z-index:30;pointer-events:none;mix-blend-mode:screen;background-image:var(--s,linear-gradient(#0000,#0000)),var(--g,linear-gradient(#0000,#0000)),var(--l,linear-gradient(#0000,#0000))}
 /* Single words styled in "Website text" */
 span[data-w]{-webkit-text-fill-color:currentColor}
 span[data-fx="shine"]{background-color:currentColor;background-image:linear-gradient(110deg,transparent 25%,rgb(255 255 255/.9) 45%,transparent 60%,rgb(0 0 0/.25) 75%,transparent 90%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
@@ -189,11 +189,18 @@ span[data-fx="glow"]{text-shadow:0 0 14px currentColor}
                 });
             });
             if (on) {
-                var k = Math.max(0.1, Math.min(1, (e.strength == null ? 60 : e.strength) / 100));
-                root.style.setProperty('--fx-c2', rgb(e.color2) || '255 122 89');
-                root.style.setProperty('--fx-a', (0.2 + 0.6 * k).toFixed(2));
-                root.style.setProperty('--fx-r', Math.round(8 + 28 * k) + 'px');
-                root.style.setProperty('--fx-o', (0.05 + 0.25 * k).toFixed(2));
+                var str = function (fx) { return Math.max(0.1, Math.min(1, ((e.strengths || {})[fx] || e.strength || 60) / 100)); };
+                var kg = str('gradient'), ks = str('shine'), kl = str('glow');
+                var c2 = rgb(e.color2) || '255 122 89', c1 = (rgb(c.champagne) || '197 168 128').split(' ');
+                root.style.setProperty('--fx-c2', c2);
+                // gradient: a stronger setting moves further from the accent toward the second color
+                root.style.setProperty('--fx-g2', c2.split(' ').map(function (v, i) { return Math.round(+c1[i] + (v - c1[i]) * kg); }).join(' '));
+                root.style.setProperty('--fx-go', (0.02 + 0.3 * kg).toFixed(2));
+                root.style.setProperty('--fx-a', (0.1 + 0.8 * ks).toFixed(2));
+                root.style.setProperty('--fx-so', (0.02 + 0.28 * ks).toFixed(2));
+                root.style.setProperty('--fx-la', (0.1 + 0.8 * kl).toFixed(2));
+                root.style.setProperty('--fx-lo', (0.02 + 0.35 * kl).toFixed(2));
+                root.style.setProperty('--fx-r', Math.round(4 + 36 * kl) + 'px');
             }
             var fam = {};
             Object.keys(FONTS).forEach(function (k) {

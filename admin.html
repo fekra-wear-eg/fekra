@@ -204,11 +204,13 @@ const FXT=[['buttons','Buttons'],['titles','Big titles'],['words','Accent words'
 const FXD={gradient:['buttons','words'],shine:['buttons','titles'],glow:['buttons','cards']};
 const FXP=[['Liquid gold','#D4AF37','#A8832A','#FFF1B8'],['Sunset','#FF7A59','#D9534F','#FFC15E'],['Neon night','#8B5CF6','#6D28D9','#22D3EE'],['Emerald','#34D399','#059669','#A7F3D0'],['Rose','#F472B6','#DB2777','#FDBA74']];
 const fxWhere=e=>{if(e.where)return e.where;const w={};FX.forEach(([k])=>w[k]=e[k]?[...FXD[k]]:[]);if(e.backdrop)w.glow.push('background');return w};
+const fxStr=(e,k)=>+((e.strengths||{})[k]||e.strength||60);
 const dFx=e=>{e=e||{};const w=fxWhere(e);return `<div class="card sec"><h3>Effects</h3><p class="mu" style="margin:0 0 8px">One click styles (they also change the accent color):</p>
  <div class="row">${FXP.map((p,i)=>`<button class="btn s" data-a="fxpreset" data-id="${i}" style="background:linear-gradient(120deg,${p[1]},${p[3]});color:#111;border:0">${p[0]}</button>`).join('')}<button class="btn g s" data-a="fxoff">No effects</button></div>
  ${FX.map(([k,l,d])=>`<div style="border-top:1px solid var(--line);padding:10px 0"><div class="row" style="margin:0 0 6px"><b>${l}</b><span class="mu">${d}</span><button class="btn g s" data-a="fxall" data-id="${k}">All / none</button></div>
+ <div class="row" style="margin:0 0 6px"><span class="mu" style="flex:none">Strength</span><input type="range" data-fx="str-${k}" aria-label="${l} strength" min="10" max="100" value="${fxStr(e,k)}" oninput="this.nextElementSibling.textContent=this.value+'%'" style="flex:1;margin:0;padding:0"><span style="flex:none;width:44px;text-align:right">${fxStr(e,k)}%</span></div>
  <div style="display:flex;flex-wrap:wrap;gap:4px 14px">${FXT.map(([t,n])=>`<label style="display:flex;gap:5px;align-items:center;margin:0;text-transform:none;letter-spacing:0"><input type="checkbox" data-fx="${k}" value="${t}" ${(w[k]||[]).includes(t)?'checked':''} style="width:auto;margin:0">${n}</label>`).join('')}</div></div>`).join('')}
- <div class="row" style="margin:6px 0 0"><span class="mu" style="flex:none">Second color</span><input type="color" data-fx="color2" value="${esc(e.color2||'#FF7A59')}" style="width:50px;height:36px;padding:2px;margin:0;flex:none"><span class="mu" style="flex:none">Strength</span><input type="range" data-fx="strength" min="10" max="100" value="${+e.strength||60}" style="flex:1;margin:0;padding:0"></div></div>`};
+ <div class="row" style="margin:6px 0 0"><span class="mu" style="flex:none">Second color</span><input type="color" data-fx="color2" value="${esc(e.color2||'#FF7A59')}" style="width:50px;height:36px;padding:2px;margin:0;flex:none"></div></div>`};
 const fxBoxes=k=>[...document.querySelectorAll('input[type=checkbox][data-fx'+(k?'="'+k+'"':'')+']')];
 const dStable=v=>JSON.stringify(v||{},(k,x)=>x&&typeof x==='object'&&!Array.isArray(x)?Object.fromEntries(Object.entries(x).sort()):x);
 const dTheme=v=>({colors:v.colors||{},fonts:v.fonts||{},effects:v.effects||{}});
@@ -233,7 +235,7 @@ views.design=()=>{if(!dinit&&dLoaded){dinit=true;if(!dById(dcur))dcur=dById(dact
  <iframe id="dfr" src="index.html?fekra-design=1"></iframe></div>`};
 const dCollect=()=>{const colors={},fonts={};document.querySelectorAll('[data-dc]').forEach(i=>{const d=DCOL.find(x=>x[0]===i.dataset.dc)[2];if(i.value.toLowerCase()!==d.toLowerCase())colors[i.dataset.dc]=i.value});
  document.querySelectorAll('[data-df]').forEach(i=>{const v=i.value.trim();if(v)fonts[i.dataset.df]=v});const effects={},q=k=>document.querySelector('[data-fx="'+k+'"]'),on=fxBoxes().filter(x=>x.checked);
- if(on.length){effects.where={};FX.forEach(([k])=>effects.where[k]=on.filter(x=>x.dataset.fx===k).map(x=>x.value));effects.color2=q('color2').value;effects.strength=+q('strength').value}
+ if(on.length){effects.where={};FX.forEach(([k])=>effects.where[k]=on.filter(x=>x.dataset.fx===k).map(x=>x.value));effects.color2=q('color2').value;effects.strengths={};FX.forEach(([k])=>effects.strengths[k]=+q('str-'+k).value)}
  return{colors,fonts,effects}};
 const dId=n=>(slug(n)||'design')+'-'+Math.random().toString(36).slice(2,6);
 const publish=p=>dHas(p)?db.collection('content').doc('theme').set({...dTheme(p),updatedBy:me.username}):db.collection('content').doc('theme').delete();
