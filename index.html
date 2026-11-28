@@ -1722,6 +1722,8 @@ span[data-fx="glow"]{text-shadow:0 0 14px currentColor}
                 });
                 palette = cls.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.order || 0) - (b.order || 0));
                 textOverrides = (cds && cds.exists && cds.data().texts) || {};
+                const allB = cds && cds.exists && cds.data().allBanner; // "All chapters" banner from the admin Chapters tab
+                if (allB) { ['tag', 'title', 'arabic', 'story'].forEach(f => { if (typeof allB[f] === 'string') collectionStories.all[f] = escH(allB[f]); }); renderCollectionStory(); }
                 const gl = gds.docs.map(d => ({ id: d.id, ...d.data() })).filter(g => g.visible !== false).sort((a, b) => (a.order || 0) - (b.order || 0));
                 if (gds.docs.length) garments = gl;   // nothing saved yet -> keep the built-in Tee + Hoodie
                 refreshGarments();
