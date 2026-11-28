@@ -126,7 +126,13 @@ views.colors=()=>`<div class="bar"><h2>Bespoke Studio colors <small>${cols.lengt
  <p class="mu">Black and White are always available in the studio. Add every other color you can produce for custom pieces here. Colors for a specific product are chosen inside that product (Products tab).</p>`+
  (cols.length?cols.map(c=>`<div class="card"><div class="row"><span style="width:26px;height:26px;border-radius:50%;background:${esc(c.hex)};border:1px solid #fff4"></span><b>${esc(c.name)}</b><span class="mu">${esc(c.hex)}</span>${gList().map(g=>colorOk(c,g.id)?`<span class="tag">${esc(g.name)}</span>`:'').join('')}<button class="btn g s" data-a="coledit" data-id="${c.id}">Edit</button><button class="btn r s" data-a="coldel" data-id="${c.id}">Delete</button></div></div>`).join(''):'<p class="mu">No extra colors yet. Only Black and White are offered.</p>');
 views.site=()=>`<div class="bar"><h2>Website text</h2><div class="act" style="margin:0"><button class="btn g s" data-a="slang" data-id="en">English</button><button class="btn g s" data-a="slang" data-id="ar">العربية</button></div></div>
- <div class="card row" style="position:sticky;top:64px;z-index:4;margin-bottom:10px"><span class="mu" id="sitesel">Click any text in the preview below to edit it right there, including the size chart and every measurement. Switch English / العربية to edit each language.</span><button class="btn" id="ssave" data-a="ssave" disabled>Save Changes</button><button class="btn g s" data-a="sreset">Reset to original</button></div>
+ <div style="position:sticky;top:64px;z-index:4;background:var(--bg)"><div class="card row" style="margin-bottom:10px"><span class="mu" id="sitesel">Click any text in the preview below to edit it right there, including the size chart and every measurement. Switch English / العربية to edit each language.</span><button class="btn" id="ssave" data-a="ssave" disabled>Save Changes</button><button class="btn g s" data-a="sreset">Reset to original</button></div>
+ <div class="card row" style="margin-bottom:10px"><b style="flex:none">Style a word</b><span class="mu" style="flex:1;min-width:220px">Click a text below, double-click a word, pick a style, then Save Changes.</span>
+ <input data-ws="font" list="wfonts" placeholder="Font, e.g. Pacifico" style="width:190px;margin:0"><datalist id="wfonts">${GFONTS.map(x=>`<option value="${x}">`).join('')}</datalist>
+ <button class="btn g s" data-a="wbold" title="Bold"><b>B</b></button><button class="btn g s" data-a="wital" title="Italic"><i>I</i></button>
+ <input type="color" data-ws="color" value="#C5A880" title="Word color" style="width:46px;height:34px;padding:2px;margin:0">
+ <select data-ws="fx" style="width:auto;margin:0"><option value="">No effect</option><option value="shine">Metallic shine</option><option value="gradient">Gradient</option><option value="glow">Glow</option></select>
+ <button class="btn g s" data-a="wclear">Clear word style</button></div></div>
  <iframe id="sitefr" src="index.html?fekra-edit=1" style="width:100%;height:72vh;border:1px solid var(--line);border-radius:8px;background:#000"></iframe>`;
 const DEF_CHART_COLS=[{en:'Size',ar:'المقاس'},{en:'Chest Width (cm)',ar:'عرض الصدر (سم)'},{en:'Body Length (cm)',ar:'طول الجسم (سم)'},{en:'Shoulder Width (cm)',ar:'عرض الكتف (سم)'},{en:'Sleeve Length (cm)',ar:'طول الكم (سم)'}];
 const DEF_GARMENTS=[
@@ -193,12 +199,17 @@ function dCloud(d){const x=d.exists?d.data():{},first=!dLoaded;ds=x.list||[];dac
  if(first&&dLoaded){if(tab==='design')render();if(Object.keys(drafts).length)dSync()}else if(tab==='design'&&$('#dtabs'))dRefresh()}
 const dStatText=()=>dErr?'<b style="color:var(--red)">'+(Object.keys(drafts).length?'Not saved online (kept on this device only): ':'Online save failed: ')+esc(dErr.code||dErr.message)+'</b> <a href="#" data-a="dretry">Retry</a>':!dLoaded?'Loading designs…':dBusy||Object.keys(drafts).length?'Saving…':'✓ All designs saved';
 const dStatus=()=>{const e=$('#dstat');if(e)e.innerHTML=dStatText()};
-const FX=[['gradient','Gradient accent','Buttons and highlights blend into the second color'],['shine','Metallic shine','A light sweeps across buttons and big titles'],['glow','Glow','Soft halo around buttons and hovered products'],['backdrop','Background light','Colored light in the page corners']];
+const FX=[['gradient','Gradient','Blends into the second color'],['shine','Metallic shine','Still, polished-metal reflections'],['glow','Glow','Soft colored light']];
+const FXT=[['buttons','Buttons'],['titles','Big titles'],['words','Accent words'],['cards','Product cards'],['background','Background']];
+const FXD={gradient:['buttons','words'],shine:['buttons','titles'],glow:['buttons','cards']};
 const FXP=[['Liquid gold','#D4AF37','#A8832A','#FFF1B8'],['Sunset','#FF7A59','#D9534F','#FFC15E'],['Neon night','#8B5CF6','#6D28D9','#22D3EE'],['Emerald','#34D399','#059669','#A7F3D0'],['Rose','#F472B6','#DB2777','#FDBA74']];
-const dFx=e=>{e=e||{};return `<div class="card sec"><h3>Effects</h3><p class="mu" style="margin:0 0 8px">One click styles (they also change the accent color):</p>
+const fxWhere=e=>{if(e.where)return e.where;const w={};FX.forEach(([k])=>w[k]=e[k]?[...FXD[k]]:[]);if(e.backdrop)w.glow.push('background');return w};
+const dFx=e=>{e=e||{};const w=fxWhere(e);return `<div class="card sec"><h3>Effects</h3><p class="mu" style="margin:0 0 8px">One click styles (they also change the accent color):</p>
  <div class="row">${FXP.map((p,i)=>`<button class="btn s" data-a="fxpreset" data-id="${i}" style="background:linear-gradient(120deg,${p[1]},${p[3]});color:#111;border:0">${p[0]}</button>`).join('')}<button class="btn g s" data-a="fxoff">No effects</button></div>
- ${FX.map(([k,l,d])=>`<label class="ck"><input type="checkbox" data-fx="${k}" ${e[k]?'checked':''}> <b>${l}</b> <span class="mu">${d}</span></label>`).join('')}
- <div class="row" style="margin:12px 0 0"><span class="mu" style="flex:none">Second color</span><input type="color" data-fx="color2" value="${esc(e.color2||'#FF7A59')}" style="width:50px;height:36px;padding:2px;margin:0;flex:none"><span class="mu" style="flex:none">Strength</span><input type="range" data-fx="strength" min="10" max="100" value="${+e.strength||60}" style="flex:1;margin:0;padding:0"></div></div>`};
+ ${FX.map(([k,l,d])=>`<div style="border-top:1px solid var(--line);padding:10px 0"><div class="row" style="margin:0 0 6px"><b>${l}</b><span class="mu">${d}</span><button class="btn g s" data-a="fxall" data-id="${k}">All / none</button></div>
+ <div style="display:flex;flex-wrap:wrap;gap:4px 14px">${FXT.map(([t,n])=>`<label style="display:flex;gap:5px;align-items:center;margin:0;text-transform:none;letter-spacing:0"><input type="checkbox" data-fx="${k}" value="${t}" ${(w[k]||[]).includes(t)?'checked':''} style="width:auto;margin:0">${n}</label>`).join('')}</div></div>`).join('')}
+ <div class="row" style="margin:6px 0 0"><span class="mu" style="flex:none">Second color</span><input type="color" data-fx="color2" value="${esc(e.color2||'#FF7A59')}" style="width:50px;height:36px;padding:2px;margin:0;flex:none"><span class="mu" style="flex:none">Strength</span><input type="range" data-fx="strength" min="10" max="100" value="${+e.strength||60}" style="flex:1;margin:0;padding:0"></div></div>`};
+const fxBoxes=k=>[...document.querySelectorAll('input[type=checkbox][data-fx'+(k?'="'+k+'"':'')+']')];
 const dStable=v=>JSON.stringify(v||{},(k,x)=>x&&typeof x==='object'&&!Array.isArray(x)?Object.fromEntries(Object.entries(x).sort()):x);
 const dTheme=v=>({colors:v.colors||{},fonts:v.fonts||{},effects:v.effects||{}});
 const dHas=v=>v&&(Object.keys(v.colors||{}).length||Object.keys(v.fonts||{}).length||Object.keys(v.effects||{}).length);
@@ -221,8 +232,8 @@ views.design=()=>{if(!dinit&&dLoaded){dinit=true;if(!dById(dcur))dcur=dById(dact
  <div class="studio"><div id="dpanel"><div id="deditor">${dEditor(dById(dcur))}</div></div>
  <iframe id="dfr" src="index.html?fekra-design=1"></iframe></div>`};
 const dCollect=()=>{const colors={},fonts={};document.querySelectorAll('[data-dc]').forEach(i=>{const d=DCOL.find(x=>x[0]===i.dataset.dc)[2];if(i.value.toLowerCase()!==d.toLowerCase())colors[i.dataset.dc]=i.value});
- document.querySelectorAll('[data-df]').forEach(i=>{const v=i.value.trim();if(v)fonts[i.dataset.df]=v});const effects={},q=k=>document.querySelector('[data-fx="'+k+'"]');
- FX.forEach(([k])=>{if(q(k)&&q(k).checked)effects[k]=true});if(Object.keys(effects).length){effects.color2=q('color2').value;effects.strength=+q('strength').value}
+ document.querySelectorAll('[data-df]').forEach(i=>{const v=i.value.trim();if(v)fonts[i.dataset.df]=v});const effects={},q=k=>document.querySelector('[data-fx="'+k+'"]'),on=fxBoxes().filter(x=>x.checked);
+ if(on.length){effects.where={};FX.forEach(([k])=>effects.where[k]=on.filter(x=>x.dataset.fx===k).map(x=>x.value));effects.color2=q('color2').value;effects.strength=+q('strength').value}
  return{colors,fonts,effects}};
 const dId=n=>(slug(n)||'design')+'-'+Math.random().toString(36).slice(2,6);
 const publish=p=>dHas(p)?db.collection('content').doc('theme').set({...dTheme(p),updatedBy:me.username}):db.collection('content').doc('theme').delete();
@@ -386,6 +397,7 @@ async function sweep(){const cut=firebase.firestore.Timestamp.fromMillis(Date.no
 let cur=null;const frame=()=>{const f=$('#sitefr');return f&&f.contentWindow},tell=m=>{const f=frame();if(f)f.postMessage({src:'fekra-admin',...m},location.origin)};
 window.addEventListener('message',e=>{const m=e.data;if(e.origin!==location.origin||!m||m.src!=='fekra')return;const sel=$('#sitesel'),sv=$('#ssave');
  if(m.type==='select'){cur={key:m.key,lang:m.lang};if(sel)sel.innerHTML='Editing <b>'+(m.lang==='ar'?'Arabic':'English')+'</b>: '+esc(m.label);if(sv)sv.disabled=true}
+ else if(m.type==='note')toast(m.text)
  else if(m.type==='dirty'){if(sv)sv.disabled=false}
  else if(m.type==='chartsave')saveChartEdit(m)
  else if(m.type==='ready')dSend()
@@ -399,8 +411,9 @@ const acts={tab:(id)=>go(id),close:closeM,out:()=>auth.signOut(),
  coledit:id=>colform(cols.find(c=>c.id===id)||{}),
  dcreset:id=>{const i=document.querySelector('[data-dc="'+id+'"]');i.value=DCOL.find(x=>x[0]===id)[2];const x=document.querySelector('[data-dx="'+id+'"]');if(x)x.value=i.value.toUpperCase();dChanged()},
  fxpreset:id=>{const p=FXP[id],set=(k,v)=>{document.querySelector('[data-dc="'+k+'"]').value=v.toLowerCase();document.querySelector('[data-dx="'+k+'"]').value=v};set('champagne',p[1]);set('champagneDark',p[2]);
-  document.querySelector('[data-fx=color2]').value=p[3].toLowerCase();FX.forEach(([k])=>document.querySelector('[data-fx='+k+']').checked=true);dChanged()},
- fxoff:()=>{FX.forEach(([k])=>document.querySelector('[data-fx='+k+']').checked=false);dChanged()},
+  document.querySelector('[data-fx=color2]').value=p[3].toLowerCase();fxBoxes().forEach(x=>x.checked=FXD[x.dataset.fx].includes(x.value));dChanged()},
+ fxall:id=>{const b=fxBoxes(id),all=b.every(x=>x.checked);b.forEach(x=>x.checked=!all);dChanged()},
+ fxoff:()=>{fxBoxes().forEach(x=>x.checked=false);dChanged()},
  dedit:id=>{const now=Date.now(),twice=acts.last===id&&now-acts.at<450;acts.last=id;acts.at=twice?0:now;if(twice&&id!=='orig')return acts.dren(id);dShow(id==='orig'?null:id)},
  dnew:()=>{dAdd(dNextName(),{});dShow(dcur)},
  dretry:()=>{dErr=null;dStatus();Object.keys(drafts).length?dSync():dCommit(dAll()).catch(fail)},
@@ -424,6 +437,7 @@ const acts={tab:(id)=>go(id),close:closeM,out:()=>auth.signOut(),
  pedit:id=>pform(prs.find(p=>p.id===id)||{}),cedit:id=>cform(chs.find(c=>c.id===id)||{}),snew:sform,elogin:eform,setup:setupForm,
  coldel:id=>confirm('Delete this color? Products that used it simply stop showing it.')&&db.collection('colors').doc(id).delete().then(()=>toast('Deleted')).catch(fail),
  slang:id=>{cur=null;tell({type:'lang',lang:id})},
+ wbold:()=>tell({type:'wordstyle',prop:'bold'}),wital:()=>tell({type:'wordstyle',prop:'italic'}),wclear:()=>tell({type:'wordstyle',prop:'clear'}),
  ssave:()=>cur?tell({type:'getHtml'}):toast('Click a text in the preview first'),
  sreset:async()=>{if(!cur)return toast('Click a text in the preview first');if(!confirm('Remove your edit and go back to the original text?'))return;
   try{await db.collection('content').doc('site').update(new firebase.firestore.FieldPath('texts',cur.key,cur.lang),FV.delete());tell({type:'reset',key:cur.key,lang:cur.lang});toast('Reset to original')}catch(x){fail(x)}},
@@ -444,6 +458,7 @@ document.addEventListener('change',e=>{const t=e.target,k=t.dataset.ch;if(!k)ret
  else if(k==='st')db.collection('orders').doc(t.dataset.id).update({status:t.value,statusBy:me.username,statusAt:FV.serverTimestamp()}).then(()=>toast('Status updated')).catch(fail);
  else if(k==='feat')saveOpt({features:{[t.dataset.k]:t.checked}});
  else if(k==='perm')db.collection('users').doc(t.dataset.id).update({perms:t.checked?FV.arrayUnion(t.dataset.k):FV.arrayRemove(t.dataset.k)}).catch(fail)});
+document.addEventListener('change',e=>{const k=e.target.dataset.ws;if(k)tell({type:'wordstyle',prop:k,value:e.target.value})});
 document.addEventListener('submit',async e=>{if(e.target.id!=='sf')return;e.preventDefault();const E=e.target.elements;
  const d={whatsapp:E.whatsapp.value.replace(/\D/g,''),whatsappDisplay:E.whatsappDisplay.value.trim(),instagram:E.instagram.value.replace('@','').trim(),shippingFee:+E.shippingFee.value||0,cloudName:E.cloudName.value.trim(),uploadPreset:E.uploadPreset.value.trim()};
  try{await db.collection('settings').doc('store').set(d,{merge:true});cfg={...cfg,...d};toast('Settings saved')}catch(x){fail(x)}});

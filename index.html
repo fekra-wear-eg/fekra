@@ -136,20 +136,33 @@ html[lang=ar] #threejs-viewport,html[lang=ar] #lang-toggle{direction:ltr}
 </style>
 
 <style id="fekra-fx">
-/* Effects chosen in the admin "Design" tab. Nothing here applies unless switched on. */
-html.fx-grad{--fx-base:linear-gradient(120deg,rgb(var(--c-champagne)),rgb(var(--fx-c2)) 55%,rgb(var(--c-champagne)))}
-html.fx-grad .bg-champagne{background-image:var(--fx-base)}
-html.fx-shine :is(a,button).bg-champagne{background-image:linear-gradient(110deg,transparent 40%,rgb(255 255 255/var(--fx-a)) 50%,transparent 60%),var(--fx-base,linear-gradient(transparent,transparent));background-size:250% 100%,100% 100%;background-repeat:no-repeat;animation:fxSweep 3.6s linear infinite}
-html.fx-shine :is(h1,h2){background-image:linear-gradient(110deg,rgb(var(--c-alabaster)) 42%,rgb(var(--c-champagne)) 50%,rgb(var(--c-alabaster)) 58%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:fxText 6s linear infinite}
-html.fx-shine h1.animate-fade-up{animation:fadeUp 1s cubic-bezier(.16,1,.3,1) forwards,fxText 6s linear infinite}
-html.fx-shine :is(h1,h2) *{-webkit-text-fill-color:currentColor}
-html.fx-grad :is(span,em,p).text-champagne:not(:has(*)),html.fx-grad :is(h1,h2) :is(span,em).text-champagne:not(:has(*)){background-image:linear-gradient(100deg,rgb(var(--c-champagne)),rgb(var(--fx-c2)));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-html.fx-glow :is(a,button).bg-champagne{box-shadow:0 0 var(--fx-r) rgb(var(--c-champagne)/var(--fx-a))}
-html.fx-glow :is(a,button).bg-champagne:hover,html.fx-glow #lookbook-grid>*:hover{box-shadow:0 0 calc(var(--fx-r)*1.8) rgb(var(--fx-c2)/var(--fx-a))}
-html.fx-bg body::before{content:"";position:fixed;inset:0;z-index:30;pointer-events:none;mix-blend-mode:screen;opacity:var(--fx-o);background:radial-gradient(60% 50% at 0% 0%,rgb(var(--c-champagne)),transparent 70%),radial-gradient(60% 55% at 100% 100%,rgb(var(--fx-c2)),transparent 70%)}
-@keyframes fxSweep{from{background-position:150% 0,0 0}to{background-position:-100% 0,0 0}}
-@keyframes fxText{from{background-position:150% 0}to{background-position:-100% 0}}
-@media(prefers-reduced-motion:reduce){html.fx-shine :is(a,button).bg-champagne,html.fx-shine h2,html.fx-shine h1{animation-play-state:paused}}
+/* Effects chosen in the admin "Design" tab. Static: nothing moves. */
+html{--metal:linear-gradient(110deg,transparent 18%,rgb(255 255 255/var(--fx-a)) 34%,transparent 47%,rgb(0 0 0/.22) 60%,transparent 70%,rgb(255 255 255/var(--fx-a)) 84%,transparent 94%);--blend:linear-gradient(110deg,rgb(var(--c-champagne)),rgb(var(--fx-c2)) 55%,rgb(var(--c-champagne)))}
+html.fx-shine-buttons :is(a,button).bg-champagne{--s:var(--metal)}
+html.fx-gradient-buttons :is(a,button).bg-champagne{--g:var(--blend)}
+html.fx-shine-titles :is(h1,h2){--s:var(--metal)}
+html.fx-gradient-titles :is(h1,h2){--g:var(--blend)}
+html.fx-shine-words :is(span,em,p).text-champagne:not(:has(*)){--s:var(--metal)}
+html.fx-gradient-words :is(span,em,p).text-champagne:not(:has(*)){--g:var(--blend)}
+html.fx-shine-cards #lookbook-grid>*::after{--s:var(--metal)}
+html.fx-gradient-cards #lookbook-grid>*::after{--g:var(--blend)}
+html.fx-shine-background body::before{--s:var(--metal)}
+html.fx-gradient-background body::before{--g:var(--blend)}
+html:is(.fx-gradient-buttons,.fx-shine-buttons) :is(a,button).bg-champagne{background-image:var(--s,linear-gradient(#0000,#0000)),var(--g,linear-gradient(#0000,#0000))}
+html.fx-glow-buttons :is(a,button).bg-champagne{box-shadow:0 0 var(--fx-r) rgb(var(--c-champagne)/var(--fx-a))}
+html:is(.fx-gradient-titles,.fx-shine-titles) :is(h1,h2),html:is(.fx-gradient-words,.fx-shine-words) :is(span,em,p).text-champagne:not(:has(*)){background-image:var(--s,linear-gradient(#0000,#0000)),var(--g,linear-gradient(#0000,#0000));background-color:rgb(var(--c-champagne));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+html:is(.fx-gradient-titles,.fx-shine-titles) :is(h1,h2) *{-webkit-text-fill-color:currentColor}
+html.fx-glow-titles :is(h1,h2),html.fx-glow-words :is(span,em,p).text-champagne:not(:has(*)){filter:drop-shadow(0 0 calc(var(--fx-r)*.6) rgb(var(--c-champagne)/var(--fx-a)))}
+html:is(.fx-gradient-cards,.fx-shine-cards) #lookbook-grid>*{position:relative}
+html:is(.fx-gradient-cards,.fx-shine-cards) #lookbook-grid>*::after{content:"";position:absolute;inset:0;pointer-events:none;background-image:var(--s,linear-gradient(#0000,#0000)),var(--g,linear-gradient(#0000,#0000));opacity:calc(var(--fx-o)*1.4);mix-blend-mode:screen}
+html.fx-glow-cards #lookbook-grid>*{box-shadow:0 0 var(--fx-r) rgb(var(--fx-c2)/calc(var(--fx-a)*.7))}
+html.fx-glow-background body::before{--l:radial-gradient(60% 50% at 0% 0%,rgb(var(--c-champagne)),transparent 70%),radial-gradient(60% 55% at 100% 100%,rgb(var(--fx-c2)),transparent 70%)}
+html:is(.fx-gradient-background,.fx-shine-background,.fx-glow-background) body::before{content:"";position:fixed;inset:0;z-index:30;pointer-events:none;mix-blend-mode:screen;opacity:var(--fx-o);background-image:var(--s,linear-gradient(#0000,#0000)),var(--g,linear-gradient(#0000,#0000)),var(--l,linear-gradient(#0000,#0000))}
+/* Single words styled in "Website text" */
+span[data-w]{-webkit-text-fill-color:currentColor}
+span[data-fx="shine"]{background-color:currentColor;background-image:linear-gradient(110deg,transparent 25%,rgb(255 255 255/.9) 45%,transparent 60%,rgb(0 0 0/.25) 75%,transparent 90%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+span[data-fx="gradient"]{background-image:linear-gradient(100deg,currentColor,rgb(var(--fx-c2,255 193 94)));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+span[data-fx="glow"]{text-shadow:0 0 14px currentColor}
 </style>
 
     <script>
@@ -164,8 +177,17 @@ html.fx-bg body::before{content:"";position:fixed;inset:0;z-index:30;pointer-eve
             ['obsidian', 'charcoal', 'alabaster', 'stone', 'champagne', 'champagneDark'].forEach(function (k) {
                 var v = rgb(c[k]); if (v) root.style.setProperty('--c-' + k, v); else root.style.removeProperty('--c-' + k);
             });
-            var e = t.effects || {}, on = e.gradient || e.shine || e.glow || e.backdrop;
-            ['gradient:fx-grad', 'shine:fx-shine', 'glow:fx-glow', 'backdrop:fx-bg'].forEach(function (p) { p = p.split(':'); root.classList.toggle(p[1], !!e[p[0]]); });
+            var e = t.effects || {}, where = e.where;
+            if (!where) { // designs saved with the first version of effects
+                where = { gradient: e.gradient ? ['buttons', 'words'] : [], shine: e.shine ? ['buttons', 'titles'] : [], glow: e.glow ? ['buttons', 'cards'] : [] };
+                if (e.backdrop) where.glow = where.glow.concat('background');
+            }
+            var on = false;
+            ['gradient', 'shine', 'glow'].forEach(function (fx) {
+                ['buttons', 'titles', 'words', 'cards', 'background'].forEach(function (part) {
+                    var yes = (where[fx] || []).indexOf(part) > -1; on = on || yes; root.classList.toggle('fx-' + fx + '-' + part, yes);
+                });
+            });
             if (on) {
                 var k = Math.max(0.1, Math.min(1, (e.strength == null ? 60 : e.strength) / 100));
                 root.style.setProperty('--fx-c2', rgb(e.color2) || '255 122 89');
@@ -1445,6 +1467,21 @@ html.fx-bg body::before{content:"";position:fixed;inset:0;z-index:30;pointer-eve
         try { siteLang = localStorage.getItem('fekra-lang') === 'ar' ? 'ar' : 'en'; } catch (e) {}
         let textOverrides = {};
         const hashStr = (str) => { let h = 5381; for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0; return (h >>> 0).toString(36); };
+        function loadWordFont(name) {
+            if (!name || document.querySelector('link[data-tf="' + name + '"]')) return;
+            const l = document.createElement('link'); l.rel = 'stylesheet'; l.setAttribute('data-tf', name);
+            l.href = 'https://fonts.googleapis.com/css?family=' + encodeURIComponent(name).replace(/%20/g, '+') + ':400,700,400italic,700italic&display=swap';
+            document.head.appendChild(l);
+        }
+        function wordStyle(el) {
+            const s = el.style, out = [];
+            if (/^(#[0-9a-f]{6}|rgb\([\d, ]+\))$/i.test(s.color)) out.push('color: ' + s.color);
+            const f = s.fontFamily.replace(/["']/g, '').trim();
+            if (/^[A-Za-z0-9 ]+$/.test(f)) { out.push("font-family: '" + f + "'"); loadWordFont(f); }
+            if (/^(italic|normal)$/.test(s.fontStyle)) out.push('font-style: ' + s.fontStyle);
+            if (/^(400|700|bold|normal)$/.test(s.fontWeight)) out.push('font-weight: ' + s.fontWeight);
+            return out.join('; ');
+        }
         // Keeps only simple inline formatting, so edited text can never inject scripts
         function cleanHTML(html) {
             const t = document.createElement('template');
@@ -1460,7 +1497,9 @@ html.fx-bg body::before{content:"";position:fixed;inset:0;z-index:30;pointer-eve
                             walk(node);
                             return;
                         }
+                        const st = ch.tagName === 'SPAN' ? wordStyle(ch) : '', fx = ch.getAttribute('data-fx'), w = ch.hasAttribute('data-w');
                         [...ch.attributes].forEach(a => { if (a.name !== 'class' || /[^\w\s:\/\[\].#%-]/.test(a.value)) ch.removeAttribute(a.name); });
+                        if (ch.tagName === 'SPAN' && w) { ch.setAttribute('data-w', ''); if (st) ch.setAttribute('style', st); if (/^(shine|glow|gradient)$/.test(fx)) ch.setAttribute('data-fx', fx); }
                         walk(ch);
                     } else if (ch.nodeType !== 3) { ch.remove(); }
                 }
@@ -1574,9 +1613,47 @@ html.fx-bg body::before{content:"";position:fixed;inset:0;z-index:30;pointer-eve
             }, true);
             document.addEventListener('input', (e) => { if (e.target === current) send({ type: 'dirty' }); });
             document.addEventListener('keydown', (e) => { if (current && e.key === 'Enter' && document.activeElement === current) { e.preventDefault(); document.execCommand('insertLineBreak'); } }, true);
+            let picked = null; // last selection inside the text being edited (survives clicks in the admin toolbar)
+            document.addEventListener('selectionchange', () => {
+                const sel = getSelection();
+                if (current && !current.__chart && sel.rangeCount && current.contains(sel.getRangeAt(0).commonAncestorContainer)) picked = sel.getRangeAt(0).cloneRange();
+            });
+            function styleWord(prop, value) {
+                if (!current || current.__chart || !picked || !current.contains(picked.commonAncestorContainer)) return send({ type: 'note', text: 'Click a text in the preview, then select a word first.' });
+                const r = picked.cloneRange();
+                if (r.collapsed) { // caret only: take the whole word around it
+                    const n = r.startContainer; if (n.nodeType !== 3) return send({ type: 'note', text: 'Double-click a word to select it.' });
+                    let a = r.startOffset, b = a; const t = n.data;
+                    while (a > 0 && !/\s/.test(t[a - 1])) a--; while (b < t.length && !/\s/.test(t[b])) b++;
+                    if (a === b) return send({ type: 'note', text: 'Double-click a word to select it.' });
+                    r.setStart(n, a); r.setEnd(n, b);
+                }
+                let node = r.commonAncestorContainer; if (node.nodeType === 3) node = node.parentElement;
+                let span = node.closest('span[data-w]');
+                if (!span || !current.contains(span) || span.textContent.trim() !== r.toString().trim()) {
+                    span = document.createElement('span'); span.setAttribute('data-w', ''); span.appendChild(r.extractContents()); r.insertNode(span);
+                }
+                const inner = [...span.querySelectorAll('span[data-w]')], cs = getComputedStyle(span);
+                if (prop === 'clear') {
+                    [...inner, span].forEach(x => x.replaceWith(...x.childNodes));
+                    picked = null;
+                } else {
+                    if (prop === 'bold') span.style.fontWeight = +cs.fontWeight >= 600 ? '400' : '700';
+                    if (prop === 'italic') span.style.fontStyle = cs.fontStyle === 'italic' ? 'normal' : 'italic';
+                    if (prop === 'color') span.style.color = value;
+                    if (prop === 'font') { const f = String(value).replace(/[^A-Za-z0-9 ]/g, '').trim(); span.style.fontFamily = f ? "'" + f + "'" : ''; loadWordFont(f); }
+                    if (prop === 'fx') value ? span.setAttribute('data-fx', value) : span.removeAttribute('data-fx');
+                    const css = { bold: 'fontWeight', italic: 'fontStyle', color: 'color', font: 'fontFamily' }[prop];
+                    inner.forEach(x => { if (css) x.style[css] = ''; });
+                    picked = document.createRange(); picked.selectNodeContents(span);
+                    getSelection().removeAllRanges(); getSelection().addRange(picked);
+                }
+                send({ type: 'dirty' });
+            }
             window.addEventListener('message', (e) => {
                 const m = e.data;
                 if (e.origin !== location.origin || !m || m.src !== 'fekra-admin') return;
+                if (m.type === 'wordstyle') return styleWord(m.prop, m.value);
                 if (m.type === 'lang') applyLang(m.lang);
                 else if (m.type === 'getHtml' && current && current.__chart) {
                     const d = current.__chart, text = current.textContent.trim(), g = garments.find(x => x.id === d.gid);
